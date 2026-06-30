@@ -1,15 +1,31 @@
 import React, { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
-import { GraduationCap, Menu, X, User } from 'lucide-react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { GraduationCap, Menu, X, LayoutDashboard, LogOut, ChevronDown, User } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const navigate = useNavigate();
 
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'All Classes', path: '/all-classes' },
     { name: 'Teach on SkilledIn', path: '/teach' },
   ];
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setDropdownOpen(false);
+    alert("Logged out successfully! isLoggedIn state set to false.");
+    navigate('/');
+  };
+
+  const handleSignInSimulate = () => {
+    setIsLoggedIn(true);
+    navigate('/login');
+  };
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-white/75 backdrop-blur-md border-b border-slate-200/50 shadow-sm">
@@ -44,25 +60,71 @@ export default function Navbar() {
               </NavLink>
             ))}
 
-            <div className="flex items-center gap-4 pl-4 border-l border-slate-200">
-              <Link
-                to="/dashboard/profile"
-                className="flex items-center gap-2 group"
-                title="Go to Dashboard"
-              >
-                <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
-                  alt="Student Avatar Profile"
-                  className="w-8 h-8 rounded-full object-cover border border-brand-teal/20 shadow-sm group-hover:border-brand-teal group-hover:scale-105 transition-all"
-                />
-                <span className="text-xs font-semibold text-slate-650 group-hover:text-brand-primary">Dashboard</span>
-              </Link>
-              <Link
-                to="/login"
-                className="px-4.5 py-2 bg-[#e2b74a] text-brand-primary font-bold text-xs rounded-soft shadow-sm hover:bg-[#e2b74a]/90 hover:scale-[1.02] transition-all"
-              >
-                Sign In
-              </Link>
+            <div className="flex items-center gap-4 pl-4 border-l border-slate-200 relative">
+              {isLoggedIn ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="flex items-center gap-2 focus:outline-none group p-1 rounded-full hover:bg-slate-50 transition-all"
+                  >
+                    <img
+                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
+                      alt="Student Avatar Profile"
+                      className="w-8 h-8 rounded-full object-cover border border-brand-teal/20 shadow-sm group-hover:border-brand-teal group-hover:scale-105 transition-all"
+                    />
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-500 group-hover:text-brand-primary transition-transform duration-200" />
+                  </button>
+
+                  {/* Absolute Positioned Dropdown Menu */}
+                  <AnimatePresence>
+                    {dropdownOpen && (
+                      <>
+                        {/* Overlay backdrop to close dropdown */}
+                        <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)} />
+                        
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute right-0 mt-2.5 w-56 bg-white border border-slate-150 rounded-soft shadow-xl py-2 z-20 text-left overflow-hidden"
+                        >
+                          {/* User Name - Non-clickable label */}
+                          <div className="px-4 py-2 border-b border-slate-100 bg-slate-50/50">
+                            <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Authenticated as</span>
+                            <span className="block text-sm font-bold text-brand-primary mt-0.5">Sophia Martinez</span>
+                          </div>
+                          
+                          {/* Clickable links */}
+                          <Link
+                            to="/dashboard/profile"
+                            onClick={() => setDropdownOpen(false)}
+                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-650 hover:bg-slate-50 hover:text-brand-primary transition-all"
+                          >
+                            <LayoutDashboard className="w-4 h-4 text-brand-teal" />
+                            Dashboard
+                          </Link>
+
+                          <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-red-650 hover:bg-red-50/50 transition-all border-t border-slate-100"
+                          >
+                            <LogOut className="w-4 h-4 text-red-500" />
+                            Logout
+                          </button>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <button
+                  onClick={handleSignInSimulate}
+                  className="px-4.5 py-2 bg-[#e2b74a] text-brand-primary font-bold text-xs rounded-soft shadow-sm hover:bg-[#e2b74a]/90 hover:scale-[1.02] transition-all"
+                >
+                  Sign In
+                </button>
+              )}
             </div>
           </div>
 
@@ -98,25 +160,43 @@ export default function Navbar() {
             </NavLink>
           ))}
           <div className="pt-4 border-t border-slate-100 px-3 space-y-3">
-            <Link
-              to="/dashboard/profile"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2.5"
-            >
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
-                alt="Student Avatar Profile"
-                className="w-9 h-9 rounded-full object-cover border border-brand-teal/20"
-              />
-              <span className="text-sm font-semibold text-slate-700">Dashboard Console</span>
-            </Link>
-            <Link
-              to="/login"
-              onClick={() => setIsOpen(false)}
-              className="block w-full text-center px-4 py-2.5 bg-[#e2b74a] text-brand-primary font-bold text-sm rounded-soft shadow-sm hover:bg-[#e2b74a]/90"
-            >
-              Sign In
-            </Link>
+            {isLoggedIn ? (
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2.5 px-3 py-1.5 bg-slate-50 rounded-soft border border-slate-100">
+                  <img
+                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
+                    alt="Student Avatar Profile"
+                    className="w-9 h-9 rounded-full object-cover border border-brand-teal/20"
+                  />
+                  <div>
+                    <span className="block text-xs font-bold text-slate-400">Authenticated</span>
+                    <span className="block text-sm font-bold text-slate-700 leading-none mt-0.5">Sophia Martinez</span>
+                  </div>
+                </div>
+                <Link
+                  to="/dashboard/profile"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 rounded-soft"
+                >
+                  <LayoutDashboard className="w-4 h-4 text-brand-teal" />
+                  Dashboard
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-red-650 hover:bg-red-50/50 rounded-soft text-left"
+                >
+                  <LogOut className="w-4 h-4 text-red-500" />
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleSignInSimulate}
+                className="block w-full text-center px-4 py-2.5 bg-[#e2b74a] text-brand-primary font-bold text-sm rounded-soft shadow-sm hover:bg-[#e2b74a]/90"
+              >
+                Sign In
+              </button>
+            )}
           </div>
         </div>
       )}

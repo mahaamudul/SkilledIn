@@ -8,7 +8,8 @@ import {
   FilePlus,
   UserCheck,
   Users,
-  ClipboardCopy
+  ClipboardCopy,
+  CreditCard
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -19,6 +20,7 @@ export default function DashboardLayout() {
     Student: [
       { name: 'Profile', path: '/dashboard/profile', icon: User },
       { name: 'My Enroll', path: '/dashboard/my-enroll', icon: BookOpen },
+      { name: 'My Orders', path: '/dashboard/my-orders', icon: CreditCard },
     ],
     Teacher: [
       { name: 'Profile', path: '/dashboard/profile', icon: User },

@@ -15,6 +15,7 @@ import Register from '../pages/Register';
 import Profile from '../pages/dashboard/Profile';
 import MyEnroll from '../pages/dashboard/MyEnroll';
 import MyEnrollDetails from '../pages/dashboard/MyEnrollDetails';
+import MyOrders from '../pages/dashboard/MyOrders';
 import AddClass from '../pages/dashboard/teacher/AddClass';
 import MyClasses from '../pages/dashboard/teacher/MyClasses';
 import ClassProgress from '../pages/dashboard/teacher/ClassProgress';
@@ -52,6 +53,7 @@ const router = createBrowserRouter([
       { path: 'profile', element: <Profile /> },
       { path: 'my-enroll', element: <MyEnroll /> },
       { path: 'myenroll-class/:id', element: <MyEnrollDetails /> },
+      { path: 'my-orders', element: <MyOrders /> },
       { path: 'add-class', element: <AddClass /> },
       { path: 'my-classes', element: <MyClasses /> },
       { path: 'my-class/:id', element: <ClassProgress /> },

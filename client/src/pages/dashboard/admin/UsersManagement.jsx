@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, UserPlus, Shield } from 'lucide-react';
+import { Search, UserPlus, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function UsersManagement() {
   const [search, setSearch] = useState('');
@@ -45,7 +45,7 @@ export default function UsersManagement() {
 
       <div className="bg-white border border-slate-150 rounded-soft overflow-hidden shadow-md">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-slate-600 border-collapse">
+          <table className="w-full text-sm text-slate-650 border-collapse">
             <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-455 border-b border-slate-150">
               <tr>
                 <th className="px-6 py-4.5 text-left font-bold">User Profile Details</th>
@@ -79,7 +79,7 @@ export default function UsersManagement() {
                     <button
                       onClick={() => handleMakeAdmin(item.id)}
                       disabled={item.role === 'Admin'}
-                      className="px-3.5 py-1.5 text-xs font-bold rounded-soft bg-brand-primary text-white hover:bg-brand-primary/95 disabled:bg-slate-100 disabled:text-slate-400 hover:scale-[1.02] active:scale-[0.98] disabled:scale-100 transition-all flex items-center gap-1.5 ml-auto shadow-sm"
+                      className="px-3.5 py-1.5 text-xs font-bold rounded-soft bg-brand-primary text-white hover:bg-brand-primary/95 disabled:bg-slate-100 disabled:text-slate-400 hover:scale-[1.02] active:scale-[0.98] disabled:scale-100 disabled:opacity-50 disabled:pointer-events-none transition-all flex items-center gap-1.5 ml-auto shadow-sm"
                     >
                       <UserPlus className="w-3.5 h-3.5 text-brand-secondary" />
                       Make Admin
@@ -89,6 +89,30 @@ export default function UsersManagement() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Sleek, responsive Pagination Footer UI layout component */}
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-150 flex items-center justify-between">
+          <span className="text-xs text-slate-500 font-semibold">
+            Showing <strong className="text-brand-primary">1-{filteredUsers.length}</strong> of <strong className="text-brand-primary">{filteredUsers.length}</strong> users
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              disabled
+              className="p-1.5 border border-slate-200 text-slate-400 bg-white rounded-soft hover:bg-slate-50 disabled:opacity-50 disabled:pointer-events-none transition-all shadow-sm"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button className="px-3 py-1 text-xs font-bold bg-[#1c3b2f] text-white border border-[#1c3b2f] rounded-soft transition-all">
+              1
+            </button>
+            <button
+              disabled
+              className="p-1.5 border border-slate-200 text-slate-400 bg-white rounded-soft hover:bg-slate-50 disabled:opacity-50 disabled:pointer-events-none transition-all shadow-sm"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

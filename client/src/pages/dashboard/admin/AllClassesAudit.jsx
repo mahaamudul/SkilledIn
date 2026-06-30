@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Check, X } from 'lucide-react';
+import { Eye, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function AllClassesAudit() {
   const [classes, setClasses] = useState([
@@ -61,7 +61,7 @@ export default function AllClassesAudit() {
                       <button
                         onClick={() => handleAction(item.id, 'Accepted')}
                         disabled={item.status !== 'Pending'}
-                        className="p-2 bg-green-50 hover:bg-green-150 text-green-700 rounded-soft border border-green-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm hover:scale-105 active:scale-95 disabled:scale-100"
+                        className="p-2 bg-green-50 hover:bg-green-150 text-green-700 rounded-soft border border-green-200 disabled:opacity-50 disabled:pointer-events-none transition-all shadow-sm hover:scale-105 active:scale-95 disabled:scale-100"
                         title="Approve Class"
                       >
                         <Check className="w-4 h-4" />
@@ -69,16 +69,18 @@ export default function AllClassesAudit() {
                       <button
                         onClick={() => handleAction(item.id, 'Rejected')}
                         disabled={item.status !== 'Pending'}
-                        className="p-2 bg-red-50 hover:bg-red-150 text-red-700 rounded-soft border border-red-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm hover:scale-105 active:scale-95 disabled:scale-100"
+                        className="p-2 bg-red-50 hover:bg-red-150 text-red-700 rounded-soft border border-red-200 disabled:opacity-50 disabled:pointer-events-none transition-all shadow-sm hover:scale-105 active:scale-95 disabled:scale-100"
                         title="Reject Class"
                       >
                         <X className="w-4 h-4" />
                       </button>
+                      
+                      {/* 'See Progress' button must be disabled by default if class is pending (not Accepted) */}
                       <button
                         onClick={() => alert(`Redirecting to progress details for class #${item.id}`)}
                         disabled={item.status !== 'Accepted'}
-                        className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-soft border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm hover:scale-105 active:scale-95 disabled:scale-100"
-                        title="See Progress Feedback"
+                        className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-soft border border-slate-200 disabled:opacity-50 disabled:pointer-events-none transition-all shadow-sm hover:scale-105 active:scale-95 disabled:scale-100"
+                        title="See Progress"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
@@ -88,6 +90,30 @@ export default function AllClassesAudit() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Optional Matching Pagination Footer */}
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-150 flex items-center justify-between">
+          <span className="text-xs text-slate-500 font-semibold">
+            Showing <strong className="text-brand-primary">1-3</strong> of <strong className="text-brand-primary">3</strong> audits
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              disabled
+              className="p-1.5 border border-slate-200 text-slate-400 bg-white rounded-soft hover:bg-slate-50 disabled:opacity-50 disabled:pointer-events-none transition-all shadow-sm"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button className="px-3 py-1 text-xs font-bold bg-[#1c3b2f] text-white border border-[#1c3b2f] rounded-soft transition-all">
+              1
+            </button>
+            <button
+              disabled
+              className="p-1.5 border border-slate-200 text-slate-400 bg-white rounded-soft hover:bg-slate-50 disabled:opacity-50 disabled:pointer-events-none transition-all shadow-sm"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

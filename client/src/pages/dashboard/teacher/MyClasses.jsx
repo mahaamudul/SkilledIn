@@ -41,10 +41,10 @@ export default function MyClasses() {
                 <span className="text-sm font-bold text-brand-teal">{c.price}</span>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
                   c.status === 'Accepted'
-                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    ? 'bg-green-50 text-green-700 border border-green-200 shadow-sm'
                     : c.status === 'Pending'
-                    ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                    : 'bg-red-50 text-red-700 border border-red-200'
+                    ? 'bg-yellow-50 text-yellow-700 border border-yellow-250 shadow-sm'
+                    : 'bg-red-50 text-red-700 border border-red-200 shadow-sm'
                 }`}>
                   {c.status}
                 </span>
@@ -72,16 +72,16 @@ export default function MyClasses() {
                 </button>
               </div>
 
+              {/* 'See Details' button must be disabled initially, and only active when status changed to approved (Accepted) */}
               <Link
                 to={c.status === 'Accepted' ? `/dashboard/my-class/${c.id}` : '#'}
-                onClick={(e) => { if (c.status !== 'Accepted') { e.preventDefault(); alert('This option is enabled only for Accepted classes.'); } }}
                 className={`w-full py-2 flex items-center justify-center gap-1.5 text-xs font-bold rounded-soft border transition-all ${
                   c.status === 'Accepted'
-                    ? 'bg-brand-primary text-white border-brand-primary hover:bg-brand-primary/95'
-                    : 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed'
+                    ? 'bg-brand-primary text-white border-brand-primary hover:bg-brand-primary/95 shadow-sm'
+                    : 'bg-slate-50 text-slate-400 border-slate-200 opacity-50 pointer-events-none'
                 }`}
               >
-                See Progress
+                See Details
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>

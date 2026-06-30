@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Search, Users, User, ArrowRight } from 'lucide-react';
+import { BookOpen, Search, Users, User, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -167,6 +167,30 @@ export default function AllClasses() {
           </motion.div>
         ))}
       </motion.div>
+
+      {/* Sleek Pagination Footer UI */}
+      <div className="mt-16 flex items-center justify-between border-t border-slate-200/80 pt-6">
+        <span className="text-xs text-slate-500 font-semibold">
+          Showing <strong className="text-brand-primary">1-6</strong> of <strong className="text-brand-primary">6</strong> classes
+        </span>
+        <div className="flex items-center gap-1.5">
+          <button
+            disabled
+            className="p-2 border border-slate-200 text-slate-400 bg-white rounded-soft hover:bg-slate-50 disabled:opacity-50 disabled:pointer-events-none transition-all shadow-sm"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button className="px-3.5 py-1.5 text-xs font-bold bg-[#1c3b2f] text-white border border-[#1c3b2f] rounded-soft transition-all">
+            1
+          </button>
+          <button
+            disabled
+            className="p-2 border border-slate-200 text-slate-400 bg-white rounded-soft hover:bg-slate-50 disabled:opacity-50 disabled:pointer-events-none transition-all shadow-sm"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
