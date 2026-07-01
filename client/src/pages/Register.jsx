@@ -1,24 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Image, GraduationCap, ArrowRight, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { AuthContext } from '../providers/AuthProvider';
+import toast from 'react-hot-toast';
+import axios from 'axios';
 
 export default function Register() {
   const navigate = useNavigate();
+  const { createUser, updateUserProfile, signInWithGoogle } = useContext(AuthContext);
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(`Account created successfully for: ${name}`);
-    navigate('/dashboard/profile');
+    const defaultPhoto = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80";
+    const imageToSave = photoUrl || defaultPhoto;
+
+    try {
+      // 1. Firebase createUser
+      await createUser(email, password);
+      
+      // 2. Update Firebase Profile
+      await updateUserProfile(name, imageToSave);
+
+      // 3. POST call to store document in MongoDB
+      await axios.post('http://localhost:5000/users', {
+        name,
+        email,
+        image: imageToSave
+      });
+
+      // 4. Success Toast
+      toast.success("Account created successfully! Welcome to SkilledIn.");
+
+      // 5. Navigate to homepage
+      navigate('/');
+    } catch (error) {
+      console.error(error);
+      toast.error(`Registration Failed: ${error.message}`);
+    }
   };
 
-  const handleGoogleSignUp = () => {
-    alert('Creating account with Google Identity...');
-    navigate('/dashboard/profile');
+  const handleGoogleSignUp = async () => {
+    try {
+      const result = await signInWithGoogle();
+      const user = result.user;
+      
+      // Save Google User to MongoDB too!
+      await axios.post('http://localhost:5000/users', {
+        name: user.displayName || "Google User",
+        email: user.email,
+        image: user.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
+      });
+
+      toast.success("Google Registration Successful! Welcome.");
+      navigate('/');
+    } catch (error) {
+      console.error(error);
+      toast.error(`Google Sign Up Failed: ${error.message}`);
+    }
   };
 
   return (
@@ -68,7 +112,7 @@ export default function Register() {
               <h1 className="text-2xl font-bold text-brand-primary">Create Account</h1>
               <p className="text-slate-400 text-xs mt-1">Get started as a student today.</p>
             </div>
-            <Link to="/" className="p-1.5 bg-slate-50 text-slate-600 rounded-soft border border-slate-100 lg:hidden">
+            <Link to="/" className="p-1.5 bg-slate-50 text-slate-650 rounded-soft border border-slate-100 lg:hidden">
               <GraduationCap className="w-5 h-5 text-brand-teal" />
             </Link>
           </div>
@@ -164,7 +208,7 @@ export default function Register() {
           {/* Social Sign-in Button */}
           <button
             onClick={handleGoogleSignUp}
-            className="w-full py-2.5 bg-white border border-slate-250 hover:bg-slate-50 text-slate-650 font-semibold rounded-soft text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
+            className="w-full py-2.5 bg-white border border-slate-250 hover:bg-slate-50 text-slate-655 font-semibold rounded-soft text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
           >
             {/* Custom Google SVG Icon */}
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">

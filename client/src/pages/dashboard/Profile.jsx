@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { User, Mail, Phone, Shield, Calendar, Award, CheckCircle2 } from 'lucide-react';
+import { AuthContext } from '../../providers/AuthProvider';
 
 export default function Profile() {
+  const { user, role } = useContext(AuthContext);
+
+  const defaultAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80";
+
   return (
     <div className="space-y-6 text-left max-w-4xl">
       <div>
@@ -17,7 +22,7 @@ export default function Profile() {
           
           <div className="relative mt-4">
             <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
+              src={(user && user.photoURL) || defaultAvatar}
               alt="Active profile avatar"
               className="w-24 h-24 rounded-full object-cover border-2 border-brand-teal/30 shadow-inner group-hover:scale-105 transition-transform duration-300"
             />
@@ -26,11 +31,13 @@ export default function Profile() {
             </div>
           </div>
           
-          <h3 className="text-xl font-bold text-brand-primary mt-5">Active User Profile</h3>
+          <h3 className="text-xl font-bold text-brand-primary mt-5">
+            {(user && user.displayName) || "Active User"}
+          </h3>
           
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-brand-teal/10 text-brand-teal border border-brand-teal/20 mt-2.5">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-brand-teal/10 text-brand-teal border border-brand-teal/20 mt-2.5 uppercase">
             <Shield className="w-3.5 h-3.5 text-brand-secondary" />
-            Verified Status
+            {role || 'student'}
           </span>
 
           <div className="w-full border-t border-slate-100 mt-6 pt-6 space-y-3.5 text-left text-xs text-slate-500">
@@ -60,7 +67,9 @@ export default function Profile() {
               </div>
               <div>
                 <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Full Name</p>
-                <p className="text-sm font-semibold text-slate-750">Active User Profile</p>
+                <p className="text-sm font-semibold text-slate-750">
+                  {(user && user.displayName) || "Active User Profile"}
+                </p>
               </div>
             </div>
 
@@ -70,7 +79,9 @@ export default function Profile() {
               </div>
               <div>
                 <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Email Address</p>
-                <p className="text-sm font-semibold text-slate-750">user@skilledin.com</p>
+                <p className="text-sm font-semibold text-slate-750">
+                  {(user && user.email) || "user@skilledin.com"}
+                </p>
               </div>
             </div>
 

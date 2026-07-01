@@ -1,22 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, GraduationCap, ArrowRight, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { AuthContext } from '../providers/AuthProvider';
+import toast from 'react-hot-toast';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { signIn, signInWithGoogle } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(`Logged in successfully with email: ${email}`);
-    navigate('/dashboard/profile');
+    try {
+      await signIn(email, password);
+      toast.success("Sign In Successful! Welcome back.");
+      navigate('/dashboard/profile');
+    } catch (error) {
+      console.error(error);
+      toast.error(`Sign In Failed: ${error.message}`);
+    }
   };
 
-  const handleGoogleSignIn = () => {
-    alert('Signing in with Google...');
-    navigate('/dashboard/profile');
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+      toast.success("Google Sign In Successful! Welcome.");
+      navigate('/dashboard/profile');
+    } catch (error) {
+      console.error(error);
+      toast.error(`Google Sign In Failed: ${error.message}`);
+    }
   };
 
   return (
@@ -66,7 +81,7 @@ export default function Login() {
               <h1 className="text-2xl font-bold text-brand-primary">Welcome Back</h1>
               <p className="text-slate-400 text-xs mt-1">Please enter your authorization credentials.</p>
             </div>
-            <Link to="/" className="p-1.5 bg-slate-50 text-slate-600 rounded-soft border border-slate-100 lg:hidden">
+            <Link to="/" className="p-1.5 bg-slate-50 text-slate-650 rounded-soft border border-slate-100 lg:hidden">
               <GraduationCap className="w-5 h-5 text-brand-teal" />
             </Link>
           </div>
@@ -128,7 +143,7 @@ export default function Login() {
           {/* Social Sign-in Button */}
           <button
             onClick={handleGoogleSignIn}
-            className="w-full py-2.5 bg-white border border-slate-250 hover:bg-slate-50 text-slate-650 font-semibold rounded-soft text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
+            className="w-full py-2.5 bg-white border border-slate-250 hover:bg-slate-50 text-slate-655 font-semibold rounded-soft text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
           >
             {/* Custom Google SVG Icon */}
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">

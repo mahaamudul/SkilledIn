@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
   User,
@@ -11,9 +11,10 @@ import {
   ClipboardCopy,
   CreditCard
 } from 'lucide-react';
+import { AuthContext } from '../providers/AuthProvider';
 
 export default function DashboardLayout() {
-  const [role, setRole] = useState('Student');
+  const { user, role, setRole } = useContext(AuthContext);
 
   // Menus defined per role
   const menuConfigs = {
@@ -35,7 +36,8 @@ export default function DashboardLayout() {
     ]
   };
 
-  const menuItems = menuConfigs[role];
+  const normalizedRole = role ? (role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()) : 'Student';
+  const menuItems = menuConfigs[normalizedRole] || menuConfigs['Student'];
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -92,13 +94,13 @@ export default function DashboardLayout() {
       <div className="flex-1 pl-64 min-h-screen flex flex-col">
         {/* Top Header Placeholder */}
         <header className="h-16 bg-white border-b border-slate-200/80 flex items-center justify-between px-8 sticky top-0 z-20 shadow-sm">
-          <h1 className="text-lg font-bold text-brand-primary">{role} Console</h1>
+          <h1 className="text-lg font-bold text-brand-primary">{normalizedRole} Console</h1>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Switch Persona:</span>
               <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
+                value={normalizedRole}
+                onChange={(e) => setRole(e.target.value.toLowerCase())}
                 className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-soft text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-teal/20"
               >
                 <option value="Student">Student View</option>
@@ -108,7 +110,7 @@ export default function DashboardLayout() {
             </div>
             <div className="w-px h-8 bg-slate-200" />
             <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
+              src={(user && user.photoURL) || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"}
               alt="User avatar placeholder"
               className="w-8 h-8 rounded-full object-cover border border-brand-teal/20 shadow-sm"
             />
