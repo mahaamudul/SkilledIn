@@ -1,55 +1,99 @@
-import React, { useState } from 'react';
-import { Send, FileText, CheckCircle2, AlertTriangle, RefreshCw, Sparkles, Award } from 'lucide-react';
+import React, { useState, useContext } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Send, FileText, CheckCircle2, AlertTriangle, RefreshCw, Sparkles, LogIn } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { AuthContext } from '../providers/AuthProvider';
+import useAxiosSecure from '../hooks/useAxiosSecure';
+import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 
 export default function Teach() {
-  const [status, setStatus] = useState('Pending'); // States: 'Pending', 'Approved', 'Rejected'
+  const { user } = useContext(AuthContext);
+  const axiosSecure = useAxiosSecure();
+  const queryClient = useQueryClient();
+
+  const [title, setTitle] = useState('');
   const [experience, setExperience] = useState('beginner');
   const [category, setCategory] = useState('web-dev');
 
+  // Fetch active user request status
+  const { data: request, isLoading } = useQuery({
+    queryKey: ['teacher-request', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return null;
+      const res = await axiosSecure.get(`/teacher-requests/${user.email}`);
+      return res.data;
+    },
+    enabled: !!user?.email
+  });
+
+  // Submit new application request
+  const submitApplication = useMutation({
+    mutationFn: async (appData) => {
+      const res = await axiosSecure.post('/teacher-requests', appData);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Teaching application submitted for review!');
+      queryClient.invalidateQueries(['teacher-request', user?.email]);
+    },
+    onError: (error) => {
+      const msg = error.response?.data?.message || error.message;
+      toast.error(`Submission failed: ${msg}`);
+    }
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert('Tutor application submitted for review!');
-    setStatus('Pending');
+    if (!user) return;
+    submitApplication.mutate({
+      name: user.displayName || 'Active Student',
+      image: user.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+      email: user.email,
+      experience,
+      title: title || 'Educator Specialist',
+      category
+    });
   };
+
+  if (!user) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-20 text-center space-y-6">
+        <div className="w-16 h-16 bg-slate-100 text-brand-primary rounded-full flex items-center justify-center mx-auto border border-slate-200">
+          <LogIn className="w-8 h-8" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold text-brand-primary">Authentication Required</h2>
+          <p className="text-sm text-slate-500 max-w-xs mx-auto">
+            Please log in or register a client account first to access the instructor portal.
+          </p>
+        </div>
+        <Link
+          to="/login"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-primary hover:bg-brand-primary/95 text-white font-bold text-sm rounded-soft shadow transition-all"
+        >
+          Sign In Today
+        </Link>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-brand-teal" />
+      </div>
+    );
+  }
+
+  const status = request?.status || 'none'; // 'pending', 'accepted', 'rejected', 'none'
 
   return (
     <div className="max-w-xl mx-auto px-4 py-16 bg-[#f8fafc] text-left space-y-6">
-      {/* Visual State Simulator for Reviewers */}
-      <div className="bg-slate-100 border border-slate-200 p-4 rounded-soft flex justify-between items-center">
-        <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Preview Application States:</span>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setStatus('Pending')}
-            className={`px-3 py-1 text-xs font-bold rounded-soft border transition-all ${
-              status === 'Pending' ? 'bg-yellow-500 border-yellow-600 text-white' : 'bg-white border-slate-200 text-slate-600'
-            }`}
-          >
-            Pending
-          </button>
-          <button
-            onClick={() => setStatus('Approved')}
-            className={`px-3 py-1 text-xs font-bold rounded-soft border transition-all ${
-              status === 'Approved' ? 'bg-green-600 border-green-700 text-white' : 'bg-white border-slate-200 text-slate-600'
-            }`}
-          >
-            Approved
-          </button>
-          <button
-            onClick={() => setStatus('Rejected')}
-            className={`px-3 py-1 text-xs font-bold rounded-soft border transition-all ${
-              status === 'Rejected' ? 'bg-red-650 border-red-700 text-white' : 'bg-white border-slate-200 text-slate-600'
-            }`}
-          >
-            Rejected
-          </button>
-        </div>
-      </div>
-
       <div className="bg-white border border-slate-150 rounded-soft p-8 shadow-md relative overflow-hidden">
-        {/* Top visual strip indicating status */}
+        {/* Top visual status color band */}
         <div className={`absolute top-0 left-0 right-0 h-1.5 ${
-          status === 'Approved' ? 'bg-green-500' : status === 'Rejected' ? 'bg-red-500' : 'bg-yellow-400'
+          status === 'accepted' ? 'bg-green-500' : status === 'rejected' ? 'bg-red-500' : status === 'pending' ? 'bg-yellow-400' : 'bg-slate-200'
         }`} />
 
         <div className="flex items-center gap-3.5 mb-6">
@@ -62,8 +106,8 @@ export default function Teach() {
           </div>
         </div>
 
-        {/* 1. Approved Teacher State Banner */}
-        {status === 'Approved' ? (
+        {/* 1. Accepted Teacher Banner */}
+        {status === 'accepted' && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -92,15 +136,45 @@ export default function Teach() {
               </ul>
             </div>
           </motion.div>
-        ) : (
-          /* Form display if not approved */
+        )}
+
+        {/* 2. Pending Application Banner */}
+        {status === 'pending' && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-6 py-6 text-center"
+          >
+            <div className="w-16 h-16 bg-yellow-50 text-yellow-600 rounded-full flex items-center justify-center mx-auto border border-yellow-100 shadow-inner animate-pulse">
+              <AlertTriangle className="w-10 h-10 stroke-[1.5]" />
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold text-brand-primary">Application Pending</h2>
+              <p className="text-sm text-slate-500 leading-relaxed max-w-sm mx-auto">
+                Your credentials are currently undergoing assessment by our review panel. We will update your permission settings once verified.
+              </p>
+            </div>
+
+            <div className="p-4.5 bg-slate-50 border border-slate-100 rounded-soft text-left">
+              <span className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Submitted Profile:</span>
+              <div className="mt-2 text-xs text-slate-550 space-y-1">
+                <div><span className="font-semibold text-slate-700">Category:</span> {request.category}</div>
+                <div><span className="font-semibold text-slate-700">Experience:</span> {request.experience}</div>
+                <div><span className="font-semibold text-slate-700">Proposed Title:</span> {request.title}</div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* 3. Form Input View (When status is rejected or none) */}
+        {(status === 'none' || status === 'rejected') && (
           <div className="space-y-6">
             <p className="text-slate-500 text-xs font-semibold leading-relaxed">
               Apply to become a teacher today. Provide your professional credentials, outline your categories of interest, and start uploading assignments and classes once approved.
             </p>
 
-            {/* Application status alert if rejected */}
-            {status === 'Rejected' && (
+            {status === 'rejected' && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -110,7 +184,7 @@ export default function Teach() {
                 <div>
                   <span className="font-bold">Application Declined</span>
                   <p className="text-red-600 mt-1 leading-relaxed">
-                    Our admin panel rejected the previous application due to insufficient curriculum details. Feel free to adjust values and re-apply below.
+                    Our admin panel rejected your previous application. Feel free to adjust credentials and re-submit.
                   </p>
                 </div>
               </motion.div>
@@ -124,10 +198,9 @@ export default function Teach() {
                 <input
                   type="text"
                   required
-                  placeholder="John Doe"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-soft text-slate-500 text-sm focus:outline-none cursor-not-allowed"
                   disabled
-                  value="Sophia Martinez (Simulated)"
+                  value={user.displayName || 'Active Student'}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-soft text-slate-500 text-sm focus:outline-none cursor-not-allowed"
                 />
               </div>
 
@@ -138,10 +211,23 @@ export default function Teach() {
                 <input
                   type="email"
                   required
-                  placeholder="john@example.com"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-soft text-slate-500 text-sm focus:outline-none cursor-not-allowed"
                   disabled
-                  value="sophia.m@skilledin.com"
+                  value={user.email || ''}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-soft text-slate-500 text-sm focus:outline-none cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Teaching Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Lead JavaScript Developer"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-soft focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal text-sm transition-all shadow-sm"
                 />
               </div>
 
@@ -179,16 +265,22 @@ export default function Teach() {
 
               <button
                 type="submit"
+                disabled={submitApplication.isPending}
                 className={`w-full py-2.5 text-white font-semibold rounded-soft transition-all flex items-center justify-center gap-2 mt-6 shadow-sm hover:scale-[1.01] active:scale-[0.99] ${
-                  status === 'Rejected'
+                  status === 'rejected'
                     ? 'bg-red-650 hover:bg-red-700'
                     : 'bg-brand-primary hover:bg-brand-primary/95'
                 }`}
               >
-                {status === 'Rejected' ? (
+                {submitApplication.isPending ? (
                   <>
-                    <RefreshCw className="w-4 h-4 text-brand-secondary animate-spin" style={{ animationDuration: '4s' }} />
-                    Re-Apply State Layout
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Submitting Application...
+                  </>
+                ) : status === 'rejected' ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 text-brand-secondary" />
+                    Re-Apply Teaching Request
                   </>
                 ) : (
                   <>

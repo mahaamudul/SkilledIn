@@ -1,10 +1,49 @@
-import React from 'react';
-import { Send, FileText } from 'lucide-react';
+import React, { useState, useContext } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { Send, FileText, Loader2 } from 'lucide-react';
+import { AuthContext } from '../../../providers/AuthProvider';
+import useAxiosSecure from '../../../hooks/useAxiosSecure';
+import toast from 'react-hot-toast';
 
 export default function AddClass() {
+  const { user } = useContext(AuthContext);
+  const axiosSecure = useAxiosSecure();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const [title, setTitle] = useState('');
+  const [price, setPrice] = useState('');
+  const [image, setImage] = useState('');
+  const [description, setDescription] = useState('');
+
+  const addClassMutation = useMutation({
+    mutationFn: async (classData) => {
+      const res = await axiosSecure.post('/classes', classData);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Class saved as Pending and sent to admin for approval!');
+      queryClient.invalidateQueries({ queryKey: ['classes', user?.email] });
+      navigate('/dashboard/my-classes');
+    },
+    onError: (error) => {
+      const msg = error.response?.data?.message || error.message;
+      toast.error(`Failed to submit class: ${msg}`);
+    }
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert('Class saved as Pending and sent to admin for approval!');
+    if (!user) return;
+    addClassMutation.mutate({
+      title,
+      name: user.displayName || 'Active Teacher',
+      email: user.email,
+      price: parseFloat(price),
+      description,
+      image: image || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&q=80'
+    });
   };
 
   return (
@@ -28,6 +67,8 @@ export default function AddClass() {
             <input
               type="text"
               required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Master Advanced React Design Systems"
               className="w-full px-3 py-2 bg-white border border-slate-200 rounded-soft focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal text-sm transition-all"
             />
@@ -42,6 +83,8 @@ export default function AddClass() {
                 type="number"
                 required
                 min="0"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
                 placeholder="e.g. 99"
                 className="w-full px-3 py-2 bg-white border border-slate-200 rounded-soft focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal text-sm transition-all"
               />
@@ -53,6 +96,8 @@ export default function AddClass() {
               <input
                 type="text"
                 required
+                value={image}
+                onChange={(e) => setImage(e.target.value)}
                 placeholder="e.g. https://images.com/banner.png"
                 className="w-full px-3 py-2 bg-white border border-slate-200 rounded-soft focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal text-sm transition-all"
               />
@@ -66,8 +111,8 @@ export default function AddClass() {
             <input
               type="text"
               disabled
-              value="Expert Teacher (Auto-filled)"
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-250 rounded-soft text-sm text-slate-500"
+              value={user?.displayName || 'Active Teacher'}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-250 rounded-soft text-sm text-slate-550 cursor-not-allowed"
             />
           </div>
 
@@ -78,8 +123,8 @@ export default function AddClass() {
             <input
               type="email"
               disabled
-              value="teacher@skilledin.com"
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-250 rounded-soft text-sm text-slate-500"
+              value={user?.email || ''}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-250 rounded-soft text-sm text-slate-555 cursor-not-allowed"
             />
           </div>
 
@@ -90,6 +135,8 @@ export default function AddClass() {
             <textarea
               required
               rows={4}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="Outline course materials, required tool stacks, and lesson topics..."
               className="w-full px-3 py-2 bg-white border border-slate-200 rounded-soft focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal text-sm transition-all"
             />
@@ -97,10 +144,20 @@ export default function AddClass() {
 
           <button
             type="submit"
+            disabled={addClassMutation.isPending}
             className="w-full py-2.5 bg-brand-primary text-white font-semibold rounded-soft hover:bg-brand-primary/95 transition-all flex items-center justify-center gap-2 mt-4 shadow-sm"
           >
-            <Send className="w-4 h-4" />
-            Submit Class for Admin Audit
+            {addClassMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Submitting Curriculum...
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                Submit Class for Admin Audit
+              </>
+            )}
           </button>
         </form>
       </div>

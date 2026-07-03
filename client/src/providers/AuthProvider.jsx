@@ -87,6 +87,13 @@ export default function AuthProvider({ children }) {
     return () => unsubscribe();
   }, []);
 
+  // Sync active persona role changes to localStorage for headers authentication
+  useEffect(() => {
+    if (role) {
+      localStorage.setItem('active-role', role.toLowerCase());
+    }
+  }, [role]);
+
   const authInfo = {
     user,
     role,

@@ -10,6 +10,10 @@ axiosSecure.interceptors.request.use((config) => {
   if (token) {
     config.headers.authorization = `Bearer ${token}`;
   }
+  const activeRole = localStorage.getItem('active-role');
+  if (activeRole) {
+    config.headers['x-persona-role'] = activeRole;
+  }
   return config;
 }, (error) => {
   return Promise.reject(error);

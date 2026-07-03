@@ -22,6 +22,7 @@ import ClassProgress from '../pages/dashboard/teacher/ClassProgress';
 import TeacherRequests from '../pages/dashboard/admin/TeacherRequests';
 import UsersManagement from '../pages/dashboard/admin/UsersManagement';
 import AllClassesAudit from '../pages/dashboard/admin/AllClassesAudit';
+import ClassFeedback from '../pages/dashboard/admin/ClassFeedback';
 import NotFound from '../pages/NotFound';
 
 const router = createBrowserRouter([
@@ -60,6 +61,7 @@ const router = createBrowserRouter([
       { path: 'admin/teacher-requests', element: <TeacherRequests /> },
       { path: 'admin/users', element: <UsersManagement /> },
       { path: 'admin/all-classes', element: <AllClassesAudit /> },
+      { path: 'class/:id', element: <ClassFeedback /> },
     ],
   },
   // Catch-All 404 Route

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import {
   Sparkles,
   ArrowRight,
@@ -114,14 +116,34 @@ export default function Home() {
     }
   ];
 
+  // Fetch feedbacks dynamically from the server
+  const { data: dbFeedbacks = [] } = useQuery({
+    queryKey: ['feedbacks-home'],
+    queryFn: async () => {
+      const res = await axios.get('http://localhost:5000/feedbacks');
+      return res.data;
+    }
+  });
+
+  // Normalize feedback lists (using dynamic reviews or fallbacks)
+  const resolvedFeedbacks = dbFeedbacks.length > 0
+    ? dbFeedbacks.map(f => ({
+        id: f._id,
+        studentName: f.student_name,
+        className: f.class_title,
+        message: f.description,
+        avatar: f.student_image
+      }))
+    : feedbacks;
+
   const [feedbackIndex, setFeedbackIndex] = useState(0);
 
   const handleFeedbackPrev = () => {
-    setFeedbackIndex((prev) => (prev - 1 + feedbacks.length) % feedbacks.length);
+    setFeedbackIndex((prev) => (prev - 1 + resolvedFeedbacks.length) % resolvedFeedbacks.length);
   };
 
   const handleFeedbackNext = () => {
-    setFeedbackIndex((prev) => (prev + 1) % feedbacks.length);
+    setFeedbackIndex((prev) => (prev + 1) % resolvedFeedbacks.length);
   };
 
   const fadeUp = {
@@ -480,7 +502,8 @@ export default function Home() {
           <div className="relative">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[0, 1, 2].map((offset) => {
-                const item = feedbacks[(feedbackIndex + offset) % feedbacks.length];
+                const item = resolvedFeedbacks[(feedbackIndex + offset) % resolvedFeedbacks.length];
+                if (!item) return null;
                 return (
                   <motion.div
                     key={item.id}
@@ -491,7 +514,7 @@ export default function Home() {
                     className="bg-white border border-slate-150 rounded-soft p-8 shadow-sm flex flex-col justify-between hover:shadow-xl hover:border-brand-teal/10 hover:scale-[1.01] transition-all duration-300 text-left h-[280px]"
                   >
                     <div className="space-y-3">
-                      <span className="block font-bold text-brand-primary text-base">
+                      <span className="block font-bold text-brand-primary text-base line-clamp-1">
                         {item.className}
                       </span>
                       <p className="text-sm text-slate-650 italic leading-relaxed line-clamp-5">
@@ -501,12 +524,12 @@ export default function Home() {
 
                     <div className="flex items-center gap-3.5 pt-4 border-t border-slate-100 mt-auto">
                       <img
-                        src={item.avatar}
+                        src={item.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"}
                         alt={item.studentName}
                         className="w-10 h-10 rounded-full object-cover border border-brand-teal/20 shadow-sm"
                       />
                       <div>
-                        <h4 className="font-bold text-brand-primary text-sm leading-none">{item.studentName}</h4>
+                        <h4 className="font-bold text-brand-primary text-sm leading-none line-clamp-1">{item.studentName}</h4>
                         <span className="text-xs text-brand-teal font-semibold mt-1 block">Verified Student</span>
                       </div>
                     </div>
@@ -525,12 +548,12 @@ export default function Home() {
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <div className="flex items-center gap-1.5">
-                {feedbacks.map((_, idx) => (
+                {resolvedFeedbacks.map((_, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setFeedbackIndex(idx % feedbacks.length)}
+                    onClick={() => setFeedbackIndex(idx % resolvedFeedbacks.length)}
                     className={`h-2 rounded-full transition-all duration-300 ${
-                      (feedbackIndex % feedbacks.length) === idx ? 'w-5 bg-brand-teal' : 'w-2 bg-slate-300'
+                      (feedbackIndex % resolvedFeedbacks.length) === idx ? 'w-5 bg-brand-teal' : 'w-2 bg-slate-300'
                     }`}
                     aria-label={`Go to slide ${idx + 1}`}
                   />

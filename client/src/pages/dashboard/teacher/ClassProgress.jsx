@@ -1,31 +1,74 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Users, FileText, CheckSquare, PlusCircle, BarChart2 } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Users, FileText, CheckSquare, PlusCircle, BarChart2, Loader2 } from 'lucide-react';
+import useAxiosSecure from '../../../hooks/useAxiosSecure';
+import toast from 'react-hot-toast';
 
 export default function ClassProgress() {
   const { id } = useParams();
+  const queryClient = useQueryClient();
+  const axiosSecure = useAxiosSecure();
+
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState('');
   const [deadline, setDeadline] = useState('');
   const [desc, setDesc] = useState('');
-  const [createdCount, setCreatedCount] = useState(2);
+
+  // Fetch real-time class statistics (enrollment, assignments, submissions)
+  const { data: stats = { totalEnrollment: 0, totalAssignments: 0, submissions: 0 }, isLoading } = useQuery({
+    queryKey: ['class-stats', id],
+    queryFn: async () => {
+      const res = await axiosSecure.get(`/assignments/stats/${id}`);
+      return res.data;
+    },
+    enabled: !!id
+  });
+
+  // Mutation to handle assignment creation
+  const addAssignmentMutation = useMutation({
+    mutationFn: async (assignmentData) => {
+      const res = await axiosSecure.post('/assignments', assignmentData);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success(`Assignment "${title}" created successfully!`);
+      queryClient.invalidateQueries({ queryKey: ['class-stats', id] });
+      setShowModal(false);
+      setTitle('');
+      setDeadline('');
+      setDesc('');
+    },
+    onError: (error) => {
+      const msg = error.response?.data?.message || error.message;
+      toast.error(`Failed to create assignment: ${msg}`);
+    }
+  });
 
   const handleCreate = (e) => {
     e.preventDefault();
-    setCreatedCount((prev) => prev + 1);
-    alert(`Assignment "${title}" created successfully!`);
-    setShowModal(false);
-    setTitle('');
-    setDeadline('');
-    setDesc('');
+    addAssignmentMutation.mutate({
+      class_id: id,
+      title,
+      deadline,
+      description: desc
+    });
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center bg-[#f8fafc]">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-brand-teal" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 text-left max-w-5xl">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <Link to="/dashboard/my-classes" className="text-xs font-semibold text-brand-teal hover:underline">&larr; Back to My Classes</Link>
-          <h2 className="text-2xl font-bold text-brand-primary mt-1">Class Progress: Course #{id}</h2>
+          <h2 className="text-2xl font-bold text-brand-primary mt-1">Class Progress Dashboard</h2>
         </div>
         <button
           onClick={() => setShowModal(true)}
@@ -44,7 +87,7 @@ export default function ClassProgress() {
             <span className="text-xs uppercase tracking-wider text-slate-500 font-bold">Class Engagement</span>
             <Users className="w-5 h-5 text-brand-teal" />
           </div>
-          <span className="block text-3xl font-extrabold text-brand-primary">482</span>
+          <span className="block text-3xl font-extrabold text-brand-primary">{stats.totalEnrollment}</span>
           <span className="text-xs text-slate-500 font-semibold mt-1 block">Total Enrolled Students</span>
         </div>
 
@@ -54,18 +97,18 @@ export default function ClassProgress() {
             <span className="text-xs uppercase tracking-wider text-slate-500 font-bold">Course Work</span>
             <FileText className="w-5 h-5 text-brand-teal" />
           </div>
-          <span className="block text-3xl font-extrabold text-brand-primary">{createdCount}</span>
+          <span className="block text-3xl font-extrabold text-brand-primary">{stats.totalAssignments}</span>
           <span className="text-xs text-slate-500 font-semibold mt-1 block">Total Created Assignments</span>
         </div>
 
         {/* Card 3: Per Day Submitted */}
         <div className="bg-[#1c3b2f]/5 border border-[#1c3b2f]/10 p-6 rounded-soft shadow-sm">
           <div className="flex justify-between items-start mb-4">
-            <span className="text-xs uppercase tracking-wider text-slate-500 font-bold">Today's Feed</span>
+            <span className="text-xs uppercase tracking-wider text-slate-500 font-bold">Total Progress</span>
             <CheckSquare className="w-5 h-5 text-brand-teal" />
           </div>
-          <span className="block text-3xl font-extrabold text-brand-primary">18</span>
-          <span className="text-xs text-slate-500 font-semibold mt-1 block">Assignments Submitted Today</span>
+          <span className="block text-3xl font-extrabold text-brand-primary">{stats.submissions}</span>
+          <span className="text-xs text-slate-500 font-semibold mt-1 block">Total Submissions Received</span>
         </div>
       </div>
 
@@ -138,8 +181,10 @@ export default function ClassProgress() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-brand-primary text-white text-xs font-bold rounded-soft hover:bg-brand-primary/95"
+                  disabled={addAssignmentMutation.isPending}
+                  className="px-4 py-2 bg-brand-primary text-white text-xs font-bold rounded-soft hover:bg-brand-primary/95 disabled:opacity-50 flex items-center gap-1.5"
                 >
+                  {addAssignmentMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   Save Assignment
                 </button>
               </div>
