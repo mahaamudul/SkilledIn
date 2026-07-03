@@ -24,6 +24,7 @@ import UsersManagement from '../pages/dashboard/admin/UsersManagement';
 import AllClassesAudit from '../pages/dashboard/admin/AllClassesAudit';
 import ClassFeedback from '../pages/dashboard/admin/ClassFeedback';
 import NotFound from '../pages/NotFound';
+import PrivateRoute from './PrivateRoute';
 
 const router = createBrowserRouter([
   // Public Routes
@@ -33,8 +34,8 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: 'all-classes', element: <AllClasses /> },
-      { path: 'class/:id', element: <ClassDetails /> },
-      { path: 'teach', element: <Teach /> },
+      { path: 'class/:id', element: <PrivateRoute><ClassDetails /></PrivateRoute> },
+      { path: 'teach', element: <PrivateRoute><Teach /></PrivateRoute> },
     ],
   },
   // Standalone Auth Routes (without main header/footer)
@@ -49,7 +50,7 @@ const router = createBrowserRouter([
   // Dashboard / Private Routes
   {
     path: '/dashboard',
-    element: <DashboardLayout />,
+    element: <PrivateRoute><DashboardLayout /></PrivateRoute>,
     children: [
       { path: 'profile', element: <Profile /> },
       { path: 'my-enroll', element: <MyEnroll /> },

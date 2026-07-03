@@ -172,6 +172,67 @@ app.get('/users/role/:email', async (req, res) => {
   }
 });
 
+// GET all users with optional server-side search (Admin only)
+app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
+  try {
+    const { search } = req.query;
+    let query = {};
+    if (search) {
+      query = {
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ]
+      };
+    }
+
+    try {
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    } catch (dbError) {
+      console.warn("MongoDB offline, searching users in memory fallback...");
+      let filtered = [...usersMemory];
+      if (search) {
+        filtered = filtered.filter(u => 
+          (u.name && u.name.toLowerCase().includes(search.toLowerCase())) ||
+          (u.email && u.email.toLowerCase().includes(search.toLowerCase()))
+        );
+      }
+      res.send(filtered);
+    }
+  } catch (error) {
+    console.error("Failed to fetch users list:", error);
+    res.status(500).send({ error: true, message: error.message });
+  }
+});
+
+// PATCH promote user to admin (Admin only)
+app.patch('/users/make-admin/:id', verifyJWT, verifyAdmin, async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    try {
+      const result = await usersCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { role: 'admin' } }
+      );
+      res.send(result);
+    } catch (dbError) {
+      console.warn("MongoDB offline, promoting user to admin in memory fallback...");
+      const memUser = usersMemory.find(u => u._id === id || u.email === id);
+      if (memUser) {
+        memUser.role = 'admin';
+        res.send({ acknowledged: true, modifiedCount: 1 });
+      } else {
+        res.status(404).send({ error: true, message: 'User not found in memory' });
+      }
+    }
+  } catch (error) {
+    console.error("Failed to promote user to admin:", error);
+    res.status(500).send({ error: true, message: error.message });
+  }
+});
+
 // ----------------------------------------------------
 // TEACHER APPLICATIONS ENDPOINTS
 // ----------------------------------------------------
@@ -651,6 +712,37 @@ app.get('/feedbacks/:classId', async (req, res) => {
     }
   } catch (error) {
     console.error("Failed to fetch class feedbacks:", error);
+    res.status(500).send({ error: true, message: error.message });
+  }
+});
+
+// GET platform statistics (dynamic users, classes, and enrollments)
+app.get('/platform-stats', async (req, res) => {
+  try {
+    try {
+      const totalUsers = await usersCollection.countDocuments();
+      const totalClasses = await classesCollection.countDocuments({ status: 'accepted' });
+      
+      const pipeline = [
+        { $match: { status: 'accepted' } },
+        { $group: { _id: null, total: { $sum: "$total_enrollment" } } }
+      ];
+      const enrollResult = await classesCollection.aggregate(pipeline).toArray();
+      const totalEnrollment = enrollResult.length > 0 ? enrollResult[0].total : 0;
+      
+      res.send({ totalUsers, totalClasses, totalEnrollment });
+    } catch (dbError) {
+      console.warn("MongoDB offline, getting stats from memory fallback...");
+      const totalUsers = usersMemory.length;
+      const totalClasses = classesMemory.filter(c => c.status === 'accepted').length;
+      const totalEnrollment = classesMemory
+        .filter(c => c.status === 'accepted')
+        .reduce((sum, c) => sum + (c.total_enrollment || 0), 0);
+      
+      res.send({ totalUsers, totalClasses, totalEnrollment });
+    }
+  } catch (error) {
+    console.error("Failed to get platform stats:", error);
     res.status(500).send({ error: true, message: error.message });
   }
 });

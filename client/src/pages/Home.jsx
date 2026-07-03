@@ -125,6 +125,62 @@ export default function Home() {
     }
   });
 
+  // Fetch accepted classes for popular listing
+  const { data: homeClasses = [] } = useQuery({
+    queryKey: ['home-classes-popular'],
+    queryFn: async () => {
+      const res = await axios.get('http://localhost:5000/classes');
+      return res.data;
+    }
+  });
+
+  // Sort and slice popular classes based on enrollment counts (only approved status classes)
+  const popularClasses = [...homeClasses]
+    .filter(c => c.status === 'accepted')
+    .sort((a, b) => (b.total_enrollment || 0) - (a.total_enrollment || 0))
+    .slice(0, 3);
+
+  const fallbackPopularClasses = [
+    {
+      _id: "1",
+      title: "React Frontend Architecture & Design",
+      name: "Sarah Jenkins",
+      price: 99,
+      description: "Learn custom state management, performance scaling, and modern styling integrations with Tailwind CSS.",
+      total_enrollment: 1248,
+      image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=600&q=80"
+    },
+    {
+      _id: "2",
+      title: "Introduction to Figma UI/UX Layouts",
+      name: "David Chen",
+      price: 79,
+      description: "Master modern wireframing, components, auto-layouts, and premium prototyping pipelines to build UX profiles.",
+      total_enrollment: 830,
+      image: "https://images.unsplash.com/photo-1618788372246-79faff0c3742?auto=format&fit=crop&w=600&q=80"
+    },
+    {
+      _id: "3",
+      title: "Data Science with Python & Pandas",
+      name: "Dr. Amanda Vance",
+      price: 129,
+      description: "Analyze large-scale datasets, construct visual charts, and train introductory machine learning pipelines.",
+      total_enrollment: 1850,
+      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80"
+    }
+  ];
+
+  // Fetch dynamic platform stats for Homepage statistics section
+  const { data: platformStats = { totalUsers: 2428, totalClasses: 86, totalEnrollment: 15430 } } = useQuery({
+    queryKey: ['platform-stats-home'],
+    queryFn: async () => {
+      const res = await axios.get('http://localhost:5000/platform-stats');
+      return res.data;
+    }
+  });
+
+  const resolvedPopularClasses = popularClasses.length > 0 ? popularClasses : fallbackPopularClasses;
+
   // Normalize feedback lists (using dynamic reviews or fallbacks)
   const resolvedFeedbacks = dbFeedbacks.length > 0
     ? dbFeedbacks.map(f => ({
@@ -388,7 +444,9 @@ export default function Home() {
                     <Users className="w-6 h-6 text-brand-secondary" />
                   </div>
                   <div>
-                    <span className="block text-2xl font-extrabold text-brand-primary">24,000+</span>
+                    <span className="block text-2xl font-extrabold text-brand-primary">
+                      {platformStats.totalUsers ? platformStats.totalUsers.toLocaleString() : '0'}
+                    </span>
                     <span className="text-sm font-semibold text-slate-600">Total Registered Users</span>
                   </div>
                 </motion.div>
@@ -402,7 +460,9 @@ export default function Home() {
                     <BookOpen className="w-6 h-6 text-brand-secondary" />
                   </div>
                   <div>
-                    <span className="block text-2xl font-extrabold text-brand-primary">1,200+</span>
+                    <span className="block text-2xl font-extrabold text-brand-primary">
+                      {platformStats.totalClasses ? platformStats.totalClasses.toLocaleString() : '0'}
+                    </span>
                     <span className="text-sm font-semibold text-slate-600">Approved Classes & Courses</span>
                   </div>
                 </motion.div>
@@ -416,7 +476,9 @@ export default function Home() {
                     <Award className="w-6 h-6 text-brand-secondary" />
                   </div>
                   <div>
-                    <span className="block text-2xl font-extrabold text-brand-primary">85,000+</span>
+                    <span className="block text-2xl font-extrabold text-brand-primary">
+                      {platformStats.totalEnrollment ? platformStats.totalEnrollment.toLocaleString() : '0'}
+                    </span>
                     <span className="text-sm font-semibold text-slate-600">Total Enrollment Invoices</span>
                   </div>
                 </motion.div>
@@ -484,6 +546,64 @@ export default function Home() {
                 </div>
               </div>
             </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Popular Classes Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="space-y-12">
+          <div className="text-center max-w-3xl mx-auto space-y-3">
+            <span className="text-xs uppercase tracking-widest text-brand-teal font-bold">Trending Education</span>
+            <h2 className="text-3xl font-bold tracking-tight text-brand-primary">Our Popular Classes</h2>
+            <p className="text-slate-500">
+              Explore our highest enrolled courses curated by verified industry specialists.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+            {resolvedPopularClasses.map((item) => (
+              <motion.div
+                key={item._id}
+                variants={fadeUp}
+                className="bg-white border border-slate-150 rounded-soft overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.01] hover:border-brand-teal/10 transition-all duration-300 flex flex-col justify-between"
+              >
+                <div className="relative aspect-video w-full bg-slate-100 overflow-hidden">
+                  <img
+                    src={item.image || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&q=80"}
+                    alt={item.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-3 right-3 bg-brand-primary/95 text-brand-secondary text-xs font-extrabold px-3 py-1 rounded-full border border-white/10 backdrop-blur-sm">
+                    ${item.price}
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-brand-teal bg-brand-teal/5 px-2 py-0.5 rounded-full border border-brand-teal/10 inline-block">
+                      Mentor: {item.name}
+                    </span>
+                    <h3 className="text-lg font-bold text-brand-primary leading-snug line-clamp-1">{item.title}</h3>
+                    <p className="text-xs text-slate-500 leading-relaxed line-clamp-3">
+                      {item.description}
+                    </p>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between mt-auto">
+                    <div className="text-xs text-slate-400 font-semibold">
+                      Enrolled: <strong className="text-brand-primary">{item.total_enrollment || 0}</strong> Students
+                    </div>
+                    <Link
+                      to={`/class/${item._id}`}
+                      className="px-4 py-2 bg-brand-primary text-white hover:bg-brand-primary/95 text-xs font-bold rounded-soft hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm"
+                    >
+                      Enroll Now
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
