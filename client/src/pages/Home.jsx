@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import Marquee from 'react-fast-marquee';
@@ -18,7 +18,8 @@ import {
   ChevronRight,
   Code,
   Palette,
-  Briefcase
+  Briefcase,
+  Flag
 } from 'lucide-react';
 
 const SafeMarquee = typeof Marquee === 'function' ? Marquee : (Marquee.default || Marquee);
@@ -49,6 +50,24 @@ export default function Home() {
   ];
 
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  const roadmapRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: roadmapRef,
+    offset: ["start 64px", "end end"]
+  });
+
+  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "-15%"]);
+  const indicatorY = useTransform(
+    scrollYProgress,
+    [0, 0.125, 0.375, 0.625, 0.875, 1],
+    ["0%", "12.5%", "37.5%", "62.5%", "87.5%", "100%"]
+  );
+  const indicatorX = useTransform(
+    scrollYProgress, 
+    [0, 0.125, 0.375, 0.625, 0.875, 1], 
+    ["50%", "58%", "58%", "42%", "42%", "50%"]
+  );
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -85,6 +104,45 @@ export default function Home() {
       name: "BizStart",
       description: "Validating business administration tracks and incubation projects.",
       icon: Briefcase
+    }
+  ];
+
+  const journeySteps = [
+    {
+      number: "01",
+      studentTitle: "Explore & Enroll",
+      studentDesc: "Students discover structured programs taught by verified industry mentors, select the best match, and complete a secure enrollment check-out.",
+      studentIcon: BookOpen,
+      teacherTitle: "Credentials Review",
+      teacherDesc: "Educators apply to teach by submitting academic credentials and class blueprints, which are evaluated by administration.",
+      teacherIcon: Users
+    },
+    {
+      number: "02",
+      studentTitle: "Hands-on Practice",
+      studentDesc: "Students work on real assignments customized by their tutor, uploading work directly through their dynamic profile logs.",
+      studentIcon: Code,
+      teacherTitle: "Curriculum Design",
+      teacherDesc: "Approved instructors create assignments, set deadlines, and configure active learning tracking structures.",
+      teacherIcon: Palette
+    },
+    {
+      number: "03",
+      studentTitle: "Feedback Loop",
+      studentDesc: "Tutors evaluate submissions and return detailed grades, and direct peer review cycles help scale practical engineering and UX habits.",
+      studentIcon: CheckCircle2,
+      teacherTitle: "Progress Diagnostics",
+      teacherDesc: "Tutors track individual submissions and review dashboard grade distribution statistics to guide students effectively.",
+      teacherIcon: TrendingUp
+    },
+    {
+      number: "04",
+      studentTitle: "Verified Career",
+      studentDesc: "Graduates unlock professional career certifications and display proof-of-work profiles to direct hiring partners.",
+      studentIcon: Award,
+      teacherTitle: "Educational Brand",
+      teacherDesc: "Tutors grow their global profile reach, accept student enrollment transactions, and build reliable class income streams.",
+      teacherIcon: Briefcase
     }
   ];
 
@@ -216,7 +274,7 @@ export default function Home() {
   };
 
   return (
-    <div className="space-y-24 pb-24 overflow-x-hidden bg-[#f8fafc]">
+    <div className="space-y-24 pb-24 bg-[#f8fafc]">
       {/* 1. Hero Banner / Carousel Section */}
       <section className="relative py-24 border-b border-slate-800 overflow-hidden bg-slate-950">
         {/* Full-width dynamic background image with transition */}
@@ -394,31 +452,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Platform Keywords Marquee */}
-      <div className="bg-gradient-to-r from-brand-primary via-[#224b3b] to-brand-primary text-white py-5 shadow-lg border-y border-brand-teal/20 relative z-10">
-        <SafeMarquee speed={60} gradient={false} play={true}>
-          <div className="flex items-center gap-16 text-lg md:text-xl font-extrabold uppercase tracking-wider select-none pr-16">
-            {[
-              "Interactive Classes",
-              "Industry Mentors",
-              "Hands-on Projects",
-              "Accredited Certifications",
-              "Expert Code Reviews",
-              "Real-time Feedback",
-              "Dashboard Statistics",
-              "UI/UX Design Tracks",
-              "Full-stack Web Dev",
-              "Tutor Verification Profile",
-              "1-on-1 Class Collaboration"
-            ].map((kw, idx) => (
-              <div key={idx} className="flex items-center gap-4 whitespace-nowrap">
-                <span className={idx % 2 === 0 ? 'text-brand-secondary' : 'text-teal-400'}>✦</span>
-                <span>{kw}</span>
-              </div>
-            ))}
-          </div>
-        </SafeMarquee>
-      </div>
+      
 
       {/* 2. Partners and Collaborators Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -460,6 +494,32 @@ export default function Home() {
           </div>
         </motion.div>
       </section>
+
+      {/* Platform Keywords Marquee */}
+      <div className="bg-gradient-to-r from-brand-primary via-[#224b3b] to-brand-primary text-white py-5 shadow-lg border-y border-brand-teal/20 relative z-10">
+        <SafeMarquee speed={60} gradient={false} play={true}>
+          <div className="flex items-center gap-16 text-lg md:text-xl font-extrabold uppercase tracking-wider select-none pr-16">
+            {[
+              "Interactive Classes",
+              "Industry Mentors",
+              "Hands-on Projects",
+              "Accredited Certifications",
+              "Expert Code Reviews",
+              "Real-time Feedback",
+              "Dashboard Statistics",
+              "UI/UX Design Tracks",
+              "Full-stack Web Dev",
+              "Tutor Verification Profile",
+              "1-on-1 Class Collaboration"
+            ].map((kw, idx) => (
+              <div key={idx} className="flex items-center gap-4 whitespace-nowrap">
+                <span className={idx % 2 === 0 ? 'text-brand-secondary' : 'text-teal-400'}>✦</span>
+                <span>{kw}</span>
+              </div>
+            ))}
+          </div>
+        </SafeMarquee>
+      </div>
 
       {/* 3. Platform Statistics Section */}
       <section className="bg-slate-50/50 py-20 border-y border-slate-150/80">
@@ -593,6 +653,314 @@ export default function Home() {
                 </div>
               </div>
             </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. Pinned Sticky Scroll Parallax Roadmap Section */}
+      <section ref={roadmapRef} className="relative h-[300vh] bg-slate-950  ">
+        {/* Sticky viewport frame */}
+        <div className="sticky top-16 h-[calc(100vh-4rem)] w-full overflow-hidden flex flex-col justify-center">
+          
+          {/* Fixed Background Image */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center z-0 bg-fixed"
+            style={{ 
+              backgroundImage: 'url(https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1920&q=80)'
+            }}
+          />
+          
+          {/* Dark Black Overlay Filter */}
+          <div className="absolute inset-0 bg-black/75 backdrop-blur-[4px] z-0" />
+
+          {/* Centered Contents */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full h-[85%] relative z-10 flex flex-col justify-between">
+            
+            {/* Header Area */}
+            <div className="text-center space-y-2 mb-4">
+              <span className="text-[10px] uppercase tracking-widest text-brand-secondary font-black bg-white/10 px-3 py-1 rounded-full border border-white/10 backdrop-blur-md inline-block">
+                Interactive Roadmaps
+              </span>
+              <h2 className="text-2xl sm:text-4xl font-extrabold text-white">
+                The Journey on <span className="text-brand-secondary">SkilledIn</span>
+              </h2>
+              <p className="text-slate-300 text-xs sm:text-sm max-w-xl mx-auto">
+                Scroll to move the flag and see how student expertise and teacher careers grow side-by-side.
+              </p>
+            </div>
+
+            {/* Column Headers */}
+            <div className="hidden lg:grid grid-cols-12 gap-4 mb-2 z-10">
+              <div className="col-span-5 text-center">
+                <span className="text-gray-200 font-extrabold uppercase tracking-widest text-teal-400">Student Journey</span>
+              </div>
+              <div className="col-span-2"></div>
+              <div className="col-span-5 text-center">
+                <span className="text-gray-200 font-extrabold uppercase tracking-widest text-brand-secondary">Teacher Journey</span>
+              </div>
+            </div>
+
+            {/* Path and Cards Container */}
+            <div className="relative flex-grow hidden lg:grid grid-cols-12 gap-4 items-center">
+              
+              {/* Left Column: Student Cards */}
+              <div className="col-span-5 relative h-full flex flex-col justify-between py-6">
+                {journeySteps.map((step, idx) => {
+                  const Icon = step.studentIcon;
+                  const ranges = [
+                    [0.0, 0.125, 0.325],
+                    [0.175, 0.375, 0.575],
+                    [0.425, 0.625, 0.825],
+                    [0.675, 0.875, 1.0]
+                  ];
+                  
+                  // Custom opacity transform centered around stepProgress
+                  // eslint-disable-next-line react-hooks/rules-of-hooks
+                  const opacity = useTransform(
+                    scrollYProgress,
+                    ranges[idx],
+                    [0.45, 1, 0.45]
+                  );
+
+                  // eslint-disable-next-line react-hooks/rules-of-hooks
+                  const scale = useTransform(
+                    scrollYProgress,
+                    ranges[idx],
+                    [0.98, 1.03, 0.98]
+                  );
+
+                  // eslint-disable-next-line react-hooks/rules-of-hooks
+                  const cardBg = useTransform(
+                    scrollYProgress,
+                    ranges[idx],
+                    ["rgba(255, 255, 255, 0.05)", "rgba(255, 255, 255, 0.12)", "rgba(255, 255, 255, 0.05)"]
+                  );
+
+                  // eslint-disable-next-line react-hooks/rules-of-hooks
+                  const cardTextColor = useTransform(
+                    scrollYProgress,
+                    ranges[idx],
+                    ["rgba(255, 255, 255, 0.4)", "rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 0.4)"]
+                  );
+
+                  // eslint-disable-next-line react-hooks/rules-of-hooks
+                  const borderOpacity = useTransform(
+                    scrollYProgress,
+                    ranges[idx],
+                    ["rgba(255, 255, 255, 0.08)", "rgba(226, 183, 74, 0.4)", "rgba(255, 255, 255, 0.08)"] // gold border when active
+                  );
+
+                  // eslint-disable-next-line react-hooks/rules-of-hooks
+                  const iconColor = useTransform(
+                    scrollYProgress,
+                    ranges[idx],
+                    ["rgba(226, 183, 74, 0.4)", "rgba(226, 183, 74, 1)", "rgba(226, 183, 74, 0.4)"]
+                  );
+
+                  return (
+                    <motion.div
+                      key={`student-${idx}`}
+                      style={{ opacity, scale, backgroundColor: cardBg, borderColor: borderOpacity }}
+                      className="border p-4 sm:p-5 rounded-soft backdrop-blur-md text-left flex gap-4 items-center shadow-2xl relative"
+                    >
+                      <motion.div 
+                        style={{ color: iconColor }}
+                        className="p-2 bg-brand-secondary/15 rounded-soft flex-shrink-0"
+                      >
+                        <Icon className="w-5 h-5" />
+                      </motion.div>
+                      <div className="space-y-0.5">
+                        <motion.h4
+                          style={{ color: cardTextColor }}
+                          className="font-black text-base sm:text-lg md:text-xl tracking-tight"
+                        >
+                          {step.studentTitle}
+                        </motion.h4>
+                      </div>
+
+                      {/* Message box tail */}
+                      <motion.div 
+                        style={{ backgroundColor: cardBg, borderColor: borderOpacity, opacity }}
+                        className="absolute right-[-6px] top-1/2 -translate-y-1/2 w-3 h-3 rotate-45 border-t border-r z-10"
+                      />
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* Middle Column: Curved SVG path + Pinned Flag indicator */}
+              <div className="col-span-2 relative h-full flex justify-center items-center">
+                {/* SVG Curve */}
+                <div className="absolute inset-y-0 w-24 flex justify-center">
+                  <svg viewBox="0 0 100 600" fill="none" preserveAspectRatio="none" className="w-full h-full overflow-visible">
+                    {/* Background curve path */}
+                    <path 
+                      d="M 50,0 Q 85,150 50,300 T 50,600" 
+                      stroke="rgba(255,255,255,0.12)" 
+                      strokeWidth="4" 
+                      strokeDasharray="6 8" 
+                    />
+                    {/* Animated drawing path */}
+                    <motion.path 
+                      d="M 50,0 Q 85,150 50,300 T 50,600" 
+                      stroke="#e2b74a" // brand-secondary gold
+                      strokeWidth="4" 
+                      strokeDasharray="6 8" 
+                      style={{ pathLength: scrollYProgress }}
+                    />
+                  </svg>
+                </div>
+
+                {/* Nodes on path */}
+                {journeySteps.map((step, idx) => {
+                  const nodeY = ["12.5%", "37.5%", "62.5%", "87.5%"][idx];
+                  const nodeX = ["58%", "58%", "42%", "42%"][idx]; // matches curve shape Q/T peaks
+
+                  return (
+                    <div 
+                      key={`node-${idx}`}
+                      className="absolute w-8 h-8 rounded-full bg-slate-900 border-2 border-slate-700 flex items-center justify-center text-xs font-black text-slate-300 z-10 shadow-lg shadow-black/50"
+                      style={{ top: nodeY, left: nodeX, transform: "translate(-50%, -50%)" }}
+                    >
+                      {step.number}
+                    </div>
+                  );
+                })}
+
+                {/* Floating Flag Indicator */}
+                <motion.div
+                  className="absolute w-8 h-8 bg-brand-secondary text-brand-primary rounded-full flex items-center justify-center shadow-2xl border border-white/20 z-20"
+                  style={{ 
+                    top: indicatorY, 
+                    left: indicatorX, 
+                    transform: "translate(-50%, -50%)" 
+                  }}
+                >
+                  <Flag className="w-4 h-4 fill-brand-primary text-brand-primary stroke-[2.5]" />
+                </motion.div>
+
+              </div>
+
+              {/* Right Column: Teacher/Tutor Cards */}
+              <div className="col-span-5 relative h-full flex flex-col justify-between py-6">
+                {journeySteps.map((step, idx) => {
+                  const Icon = step.teacherIcon;
+                  const ranges = [
+                    [0.0, 0.125, 0.325],
+                    [0.175, 0.375, 0.575],
+                    [0.425, 0.625, 0.825],
+                    [0.675, 0.875, 1.0]
+                  ];
+
+                  // eslint-disable-next-line react-hooks/rules-of-hooks
+                  const opacity = useTransform(
+                    scrollYProgress,
+                    ranges[idx],
+                    [0.45, 1, 0.45]
+                  );
+
+                  // eslint-disable-next-line react-hooks/rules-of-hooks
+                  const scale = useTransform(
+                    scrollYProgress,
+                    ranges[idx],
+                    [0.98, 1.03, 0.98]
+                  );
+
+                  // eslint-disable-next-line react-hooks/rules-of-hooks
+                  const cardBg = useTransform(
+                    scrollYProgress,
+                    ranges[idx],
+                    ["rgba(255, 255, 255, 0.05)", "rgba(255, 255, 255, 0.12)", "rgba(255, 255, 255, 0.05)"]
+                  );
+
+                  // eslint-disable-next-line react-hooks/rules-of-hooks
+                  const cardTextColor = useTransform(
+                    scrollYProgress,
+                    ranges[idx],
+                    ["rgba(255, 255, 255, 0.4)", "rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 0.4)"]
+                  );
+
+                  // eslint-disable-next-line react-hooks/rules-of-hooks
+                  const borderOpacity = useTransform(
+                    scrollYProgress,
+                    ranges[idx],
+                    ["rgba(255, 255, 255, 0.08)", "rgba(226, 183, 74, 0.4)", "rgba(255, 255, 255, 0.08)"] // gold border when active
+                  );
+
+                  // eslint-disable-next-line react-hooks/rules-of-hooks
+                  const iconColor = useTransform(
+                    scrollYProgress,
+                    ranges[idx],
+                    ["rgba(226, 183, 74, 0.4)", "rgba(226, 183, 74, 1)", "rgba(226, 183, 74, 0.4)"]
+                  );
+
+                  return (
+                    <motion.div
+                      key={`teacher-${idx}`}
+                      style={{ opacity, scale, backgroundColor: cardBg, borderColor: borderOpacity }}
+                      className="border p-4 sm:p-5 rounded-soft backdrop-blur-md text-left flex gap-4 items-center shadow-2xl relative"
+                    >
+                      <motion.div 
+                        style={{ color: iconColor }}
+                        className="p-2 bg-brand-secondary/15 rounded-soft flex-shrink-0"
+                      >
+                        <Icon className="w-5 h-5" />
+                      </motion.div>
+                      <div className="space-y-0.5">
+                        <motion.h4
+                          style={{ color: cardTextColor }}
+                          className="font-black text-base sm:text-lg md:text-xl tracking-tight"
+                        >
+                          {step.teacherTitle}
+                        </motion.h4>
+                      </div>
+
+                      {/* Message box tail */}
+                      <motion.div 
+                        style={{ backgroundColor: cardBg, borderColor: borderOpacity, opacity }}
+                        className="absolute left-[-6px] top-1/2 -translate-y-1/2 w-3 h-3 rotate-45 border-l border-b z-10"
+                      />
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+            </div>
+
+            {/* Mobile/Tablet fallback list */}
+            <div className="lg:hidden flex-grow overflow-y-auto space-y-8 py-4">
+              {journeySteps.map((step, idx) => {
+                const StudentIcon = step.studentIcon;
+                const TeacherIcon = step.teacherIcon;
+                return (
+                  <div key={`mobile-${idx}`} className="space-y-4 bg-white/5 border border-white/10 p-5 rounded-soft backdrop-blur-md text-left">
+                    <div className="flex items-center gap-3 text-brand-secondary font-black text-sm">
+                      <span className="px-2 py-0.5 bg-brand-secondary/20 text-brand-secondary rounded text-xs">{step.number}</span>
+                      <span>Milestone Step</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Student Part */}
+                      <div className="flex items-center gap-3 border-l-2 border-teal-400/50 pl-3">
+                        <StudentIcon className="w-5 h-5 text-brand-secondary flex-shrink-0" />
+                        <h4 className="font-black text-white text-base sm:text-lg">
+                          {step.studentTitle} (Student)
+                        </h4>
+                      </div>
+
+                      {/* Teacher Part */}
+                      <div className="flex items-center gap-3 border-l-2 border-brand-secondary/50 pl-3">
+                        <TeacherIcon className="w-5 h-5 text-brand-secondary flex-shrink-0" />
+                        <h4 className="font-black text-white text-base sm:text-lg">
+                          {step.teacherTitle} (Tutor)
+                        </h4>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
           </div>
         </div>
       </section>
