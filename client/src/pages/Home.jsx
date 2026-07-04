@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import Marquee from 'react-fast-marquee';
 import {
   Sparkles,
   ArrowRight,
@@ -19,6 +20,8 @@ import {
   Palette,
   Briefcase
 } from 'lucide-react';
+
+const SafeMarquee = typeof Marquee === 'function' ? Marquee : (Marquee.default || Marquee);
 
 export default function Home() {
   const slides = [
@@ -215,8 +218,26 @@ export default function Home() {
   return (
     <div className="space-y-24 pb-24 overflow-x-hidden bg-[#f8fafc]">
       {/* 1. Hero Banner / Carousel Section */}
-      <section className="relative bg-gradient-to-br from-slate-50 via-white to-brand-teal/5 py-24 border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative py-24 border-b border-slate-800 overflow-hidden bg-slate-950">
+        {/* Full-width dynamic background image with transition */}
+        <div className="absolute inset-0 z-0">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSlide}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.45 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: `url(${slides[currentSlide].image})` }}
+            />
+          </AnimatePresence>
+        </div>
+
+        {/* Primary Glass Overlay */}
+        <div className="absolute inset-0 bg-brand-primary/65 backdrop-blur-xl z-0" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
             {/* Left side text details */}
             <motion.div
@@ -225,7 +246,7 @@ export default function Home() {
               variants={fadeUp}
               className="lg:col-span-7 space-y-6 text-left"
             >
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-teal/10 text-brand-teal border border-brand-teal/20 text-xs font-bold uppercase tracking-wider">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-brand-secondary border border-white/10 backdrop-blur-md text-xs font-bold uppercase tracking-wider">
                 <Sparkles className="w-3.5 h-3.5 text-brand-secondary animate-pulse" />
                 {slides[currentSlide].badge}
               </div>
@@ -240,11 +261,11 @@ export default function Home() {
                     transition={{ duration: 0.5 }}
                     className="absolute inset-0"
                   >
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-brand-primary leading-tight">
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
                       {slides[currentSlide].title.split(" ").map((w, idx) => (
                         <span key={idx}>
                           {w === "Expert" || w === "Class" || w === "Career" ? (
-                            <span className="text-brand-teal">{w} </span>
+                            <span className="text-teal-400">{w} </span>
                           ) : w === "Guidance" || w === "Tutors" || w === "Certifications" ? (
                             <span className="text-brand-secondary">{w} </span>
                           ) : (
@@ -265,7 +286,7 @@ export default function Home() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="absolute inset-0 text-slate-600 text-base md:text-lg max-w-xl leading-relaxed"
+                    className="absolute inset-0 text-slate-200 text-base md:text-lg max-w-xl leading-relaxed"
                   >
                     {slides[currentSlide].description}
                   </motion.p>
@@ -275,14 +296,14 @@ export default function Home() {
               <div className="flex flex-wrap items-center gap-4 pt-6">
                 <Link
                   to="/all-classes"
-                  className="inline-flex items-center gap-2 px-6 py-3.5 bg-brand-primary text-white font-semibold rounded-soft hover:bg-brand-primary/95 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 shadow-md"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 bg-brand-secondary text-brand-primary font-extrabold rounded-soft hover:bg-brand-secondary/90 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 shadow-md"
                 >
                   Explore Classes
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
                   to="/teach"
-                  className="inline-flex items-center gap-2 px-6 py-3.5 bg-white text-brand-primary border border-slate-200 font-semibold rounded-soft hover:bg-slate-50 hover:border-slate-300 active:scale-[0.99] transition-all duration-300 shadow-sm"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 bg-white/10 text-white border border-white/20 font-semibold rounded-soft hover:bg-white/20 active:scale-[0.99] transition-all duration-300 shadow-sm backdrop-blur-md"
                 >
                   Become a Teacher
                 </Link>
@@ -292,7 +313,7 @@ export default function Home() {
               <div className="flex items-center gap-3 pt-6">
                 <button
                   onClick={handlePrev}
-                  className="p-2 border border-slate-200 rounded-full hover:bg-slate-50 text-slate-500 hover:text-brand-primary hover:border-slate-300 transition-all shadow-sm"
+                  className="p-2 border border-white/20 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-all shadow-sm"
                   aria-label="Previous slide"
                 >
                   <ChevronLeft className="w-5 h-5" />
@@ -303,7 +324,7 @@ export default function Home() {
                       key={idx}
                       onClick={() => setCurrentSlide(idx)}
                       className={`h-2.5 rounded-full transition-all duration-300 ${
-                        currentSlide === idx ? 'w-6 bg-brand-teal' : 'w-2.5 bg-slate-300'
+                        currentSlide === idx ? 'w-6 bg-brand-secondary' : 'w-2.5 bg-white/30'
                       }`}
                       aria-label={`Go to slide ${idx + 1}`}
                     />
@@ -311,7 +332,7 @@ export default function Home() {
                 </div>
                 <button
                   onClick={handleNext}
-                  className="p-2 border border-slate-200 rounded-full hover:bg-slate-50 text-slate-500 hover:text-brand-primary hover:border-slate-300 transition-all shadow-sm"
+                  className="p-2 border border-white/20 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-all shadow-sm"
                   aria-label="Next slide"
                 >
                   <ChevronRight className="w-5 h-5" />
@@ -372,6 +393,32 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Platform Keywords Marquee */}
+      <div className="bg-gradient-to-r from-brand-primary via-[#224b3b] to-brand-primary text-white py-5 shadow-lg border-y border-brand-teal/20 relative z-10">
+        <SafeMarquee speed={60} gradient={false} play={true}>
+          <div className="flex items-center gap-16 text-lg md:text-xl font-extrabold uppercase tracking-wider select-none pr-16">
+            {[
+              "Interactive Classes",
+              "Industry Mentors",
+              "Hands-on Projects",
+              "Accredited Certifications",
+              "Expert Code Reviews",
+              "Real-time Feedback",
+              "Dashboard Statistics",
+              "UI/UX Design Tracks",
+              "Full-stack Web Dev",
+              "Tutor Verification Profile",
+              "1-on-1 Class Collaboration"
+            ].map((kw, idx) => (
+              <div key={idx} className="flex items-center gap-4 whitespace-nowrap">
+                <span className={idx % 2 === 0 ? 'text-brand-secondary' : 'text-teal-400'}>✦</span>
+                <span>{kw}</span>
+              </div>
+            ))}
+          </div>
+        </SafeMarquee>
+      </div>
 
       {/* 2. Partners and Collaborators Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -692,11 +739,11 @@ export default function Home() {
       </section>
 
       {/* 4. Teacher Call-To-Action (CTA) Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-brand-primary rounded-2xl overflow-hidden shadow-2xl text-white relative">
-          {/* Subtle grid pattern background */}
-          <div className="absolute inset-0 opacity-5 pointer-events-none bg-[radial-gradient(#ffffff_1.5px,transparent_1.5px)] [background-size:24px_24px]" />
-          
+      <section className="relative py-24 bg-brand-primary overflow-hidden text-white">
+        {/* Subtle grid pattern background */}
+        <div className="absolute inset-0 opacity-5 pointer-events-none bg-[radial-gradient(#ffffff_1.5px,transparent_1.5px)] [background-size:24px_24px] z-0" />
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left side Graphic representation with Unsplash Tutor photo */}
             <motion.div
@@ -704,7 +751,7 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="lg:col-span-5 p-8 lg:p-12 lg:pr-0"
+              className="lg:col-span-5"
             >
               <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-soft space-y-6 text-left shadow-lg relative overflow-hidden h-[300px] flex flex-col justify-between">
                 <div
@@ -716,7 +763,7 @@ export default function Home() {
                     MT
                   </div>
                   <div>
-                    <h4 className="font-bold">Mentor Invitation Console</h4>
+                    <h4 className="font-bold text-white">Mentor Invitation Console</h4>
                     <span className="text-xs text-slate-300">Teach today, impact tomorrow</span>
                   </div>
                 </div>
@@ -751,7 +798,7 @@ export default function Home() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="lg:col-span-7 p-8 lg:p-12 text-left space-y-6"
+              className="lg:col-span-7 text-left space-y-6"
             >
               <span className="text-xs uppercase tracking-widest text-brand-secondary font-bold">Share Your Expertise</span>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight leading-snug">
@@ -764,7 +811,7 @@ export default function Home() {
               <div className="pt-4">
                 <Link
                   to="/teach"
-                  className="inline-flex items-center gap-2.5 px-7 py-4 bg-[#e2b74a] text-brand-primary font-bold rounded-soft hover:bg-[#e2b74a]/95 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+                  className="inline-flex items-center gap-2.5 px-7 py-4 bg-brand-secondary text-brand-primary font-extrabold rounded-soft hover:bg-brand-secondary/90 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
                 >
                   Start teaching today
                   <ArrowRight className="w-4 h-4" />
