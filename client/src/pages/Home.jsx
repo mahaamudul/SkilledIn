@@ -496,7 +496,7 @@ export default function Home() {
       </section>
 
       {/* Platform Keywords Marquee */}
-      <div className="bg-gradient-to-r from-brand-primary via-[#224b3b] to-brand-primary text-white py-5 shadow-lg border-y border-brand-teal/20 relative z-10">
+      <div className="bg-gradient-to-r from-brand-primary via-[#224b3b] to-brand-primary text-gray-300 py-5 shadow-lg border-y border-brand-teal/20 relative z-10">
         <SafeMarquee speed={60} gradient={false} play={true}>
           <div className="flex items-center gap-16 text-lg md:text-xl font-extrabold uppercase tracking-wider select-none pr-16">
             {[

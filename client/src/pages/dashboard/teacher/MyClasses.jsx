@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { BookOpen, FileEdit, Trash2, ArrowRight, Inbox } from 'lucide-react';
 import { AuthContext } from '../../../providers/AuthProvider';
 import useAxiosSecure from '../../../hooks/useAxiosSecure';
+import { toast } from 'react-hot-toast';
 
 export default function MyClasses() {
   const { user } = useContext(AuthContext);
@@ -89,14 +90,14 @@ export default function MyClasses() {
               <div className="space-y-3 pt-4 border-t border-slate-100">
                 <div className="flex gap-2">
                   <button
-                    onClick={() => alert('Update Class modal details triggers here...')}
+                    onClick={() => toast('Update Class modal details triggers here...', { icon: '📝' })}
                     className="flex-1 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-bold rounded-soft border border-slate-200 flex items-center justify-center gap-1"
                   >
                     <FileEdit className="w-3.5 h-3.5" />
                     Edit
                   </button>
                   <button
-                    onClick={() => alert('Delete hook triggers here...')}
+                    onClick={() => toast.error('Delete hook triggers here...')}
                     className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold rounded-soft border border-red-200 flex items-center justify-center"
                     aria-label="Delete class"
                   >
