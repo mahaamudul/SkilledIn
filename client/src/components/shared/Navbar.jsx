@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { GraduationCap, Menu, X, LayoutDashboard, LogOut, ChevronDown } from 'lucide-react';
+import { GraduationCap, Menu, X, LayoutDashboard, LogOut, ChevronDown, LogIn } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthContext } from '../../providers/AuthProvider';
 
@@ -136,9 +136,10 @@ export default function Navbar() {
               ) : (
                 <Link
                   to="/login"
-                  className="px-4.5 py-2 bg-[#e2b74a] text-brand-primary font-bold text-xs rounded-soft shadow-sm hover:bg-[#e2b74a]/90 hover:scale-[1.02] transition-all"
+                  className="relative group overflow-hidden px-5 py-2 bg-gradient-to-r from-brand-secondary to-[#f0c965] text-brand-primary font-extrabold text-xs tracking-wider uppercase rounded-full shadow-md hover:shadow-lg hover:shadow-brand-secondary/20 hover:scale-[1.04] active:scale-95 transition-all duration-300 flex items-center gap-1.5 border border-brand-secondary/10"
                 >
-                  Sign In
+                  <span>Sign In</span>
+                  <LogIn className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform duration-200" />
                 </Link>
               )}
             </div>
@@ -211,9 +212,10 @@ export default function Navbar() {
               <Link
                 to="/login"
                 onClick={() => setIsOpen(false)}
-                className="block w-full text-center px-4 py-2.5 bg-[#e2b74a] text-brand-primary font-bold text-sm rounded-soft shadow-sm hover:bg-[#e2b74a]/90"
+                className="w-full text-center py-2.5 bg-gradient-to-r from-brand-secondary to-[#f0c965] text-brand-primary font-extrabold text-sm tracking-wider uppercase rounded-full shadow-md active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 border border-brand-secondary/10"
               >
-                Sign In
+                <span>Sign In</span>
+                <LogIn className="w-4 h-4" />
               </Link>
             )}
           </div>
