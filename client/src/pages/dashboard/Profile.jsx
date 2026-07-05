@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
 import { 
   User, 
   Mail, 
@@ -21,9 +23,10 @@ import { AuthContext } from '../../providers/AuthProvider';
 import toast from 'react-hot-toast';
 
 export default function Profile() {
-  const { user, role, profileData, updateProfileData, profileCompletion } = useContext(AuthContext);
+  const { user, role } = useContext(AuthContext);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeSubTab = searchParams.get('tab') || 'personal';
+  const queryClient = useQueryClient();
 
   // Personal details states
   const [name, setName] = useState('');
@@ -40,48 +43,79 @@ export default function Profile() {
   const [skills, setSkills] = useState([]);
   const [bio, setBio] = useState('');
 
+  // Fetch current user details via TanStack Query
+  const { data: profile } = useQuery({
+    queryKey: ['user-profile', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return null;
+      const res = await axios.get(`http://localhost:5000/users/current?email=${user.email}`);
+      return res.data;
+    },
+    enabled: !!user?.email
+  });
+
+  // Save changes via TanStack Mutation
+  const mutation = useMutation({
+    mutationFn: async (updatedPayload) => {
+      const res = await axios.patch('http://localhost:5000/users/update-profile', updatedPayload);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Profile details saved successfully!');
+      // Real-time invalidation to trigger sidebar and unlock state updates
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+    },
+    onError: (err) => {
+      toast.error(`Update failed: ${err.message}`);
+    }
+  });
+
   // Sync state values on load or update
   useEffect(() => {
-    if (profileData) {
-      setName(profileData.name || user?.displayName || '');
-      setPhone(profileData.phone || '');
-      setAdditionalEmail(profileData.additionalEmail || '');
-      setAvatar(profileData.avatar || user?.photoURL || '');
-      setAcademicHistory(Array.isArray(profileData.academicHistory) ? profileData.academicHistory : []);
-      setCurrentJob(profileData.currentJob || '');
-      setSkills(Array.isArray(profileData.skills) ? profileData.skills : []);
-      setBio(profileData.bio || '');
+    if (profile) {
+      setName(profile.personalInfo?.name || user?.displayName || '');
+      setPhone(profile.personalInfo?.phone || '');
+      setAdditionalEmail(profile.personalInfo?.additionalEmail || '');
+      setAvatar(profile.personalInfo?.avatar || user?.photoURL || '');
+      setAcademicHistory(Array.isArray(profile.education) ? profile.education : []);
+      setCurrentJob(profile.professionalInfo?.currentJob || '');
+      setSkills(Array.isArray(profile.professionalInfo?.skills) ? profile.professionalInfo.skills : []);
+      setBio(profile.professionalInfo?.bio || '');
     }
-  }, [profileData, user]);
+  }, [profile, user]);
 
   // Submit handlers
   const handlePersonalSubmit = (e) => {
     e.preventDefault();
-    updateProfileData({
-      name,
-      phone,
-      additionalEmail,
-      avatar
+    mutation.mutate({
+      email: user.email,
+      personalInfo: {
+        name,
+        phone,
+        additionalEmail,
+        avatar
+      }
     });
-    toast.success('Personal details saved successfully!');
   };
 
   const handleAcademicSubmit = (e) => {
     e.preventDefault();
-    updateProfileData({
-      academicHistory
+    mutation.mutate({
+      email: user.email,
+      education: academicHistory
     });
-    toast.success('Academic history saved successfully!');
   };
 
   const handleProfessionalSubmit = (e) => {
     e.preventDefault();
-    updateProfileData({
-      currentJob,
-      skills,
-      bio
+    mutation.mutate({
+      email: user.email,
+      professionalInfo: {
+        currentJob,
+        skills,
+        bio
+      }
     });
-    toast.success('Professional profile and skills saved successfully!');
   };
 
   // Academic dynamic rows
@@ -113,6 +147,7 @@ export default function Profile() {
   };
 
   // Determine if a tab is locked
+  const profileCompletion = profile?.profileCompletePercent ?? 0;
   const isLocked = profileCompletion < 60;
 
   return (
@@ -140,28 +175,27 @@ export default function Profile() {
         
         {/* Validation Gate Overlay Lock */}
         {isLocked && activeSubTab !== 'personal' && (
-          <div className="absolute inset-0 z-20 bg-slate-950/80 backdrop-blur-md rounded-soft flex flex-col justify-center items-center text-center p-8 pointer-events-auto">
-            <div className="p-4 bg-slate-900 border border-white/10 rounded-full shadow-lg mb-4 text-[#e2b74a]">
-              <Lock className="w-10 h-10 animate-bounce" />
+          <div className="absolute inset-0 z-20 backdrop-blur-sm bg-white/40 rounded-soft flex flex-col justify-center items-center text-center p-8 pointer-events-auto">
+            <div className="p-4 bg-white border border-slate-200 rounded-full shadow-md mb-4 text-[#e2b74a]">
+              <Lock className="w-10 h-10 animate-pulse" />
             </div>
-            <h3 className="text-white text-lg font-black max-w-md">Tab Section Locked</h3>
-            <p className="text-slate-350 text-sm max-w-md mt-2 leading-relaxed">
-              Please complete your primary Required Personal Details first to unlock other profile sections.
-            </p>
-            <div className="mt-4 flex items-center gap-2.5 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-slate-300">
+            <h3 className="text-brand-primary text-sm font-black max-w-xl leading-relaxed">
+              🔒 Required Action: Please finish your Required Personal Details (Name, Phone, Additional Email) to hit 60% completion and unlock these advanced profile sections.
+            </h3>
+            <div className="mt-4 flex items-center gap-2 px-3.5 py-1.5 bg-slate-50 border border-slate-250 rounded-full text-xs font-bold text-slate-650">
               <Sparkles className="w-3.5 h-3.5 text-[#e2b74a]" />
               Current Profile Completion: {profileCompletion}% / 60% Required
             </div>
             <button 
               onClick={() => setSearchParams({ tab: 'personal' })}
-              className="mt-6 px-6 py-2.5 bg-[#e2b74a] text-brand-primary text-xs font-black uppercase tracking-wider rounded-soft shadow-md hover:bg-[#e2b74a]/90 active:scale-95 transition-all"
+              className="mt-6 px-6 py-2.5 bg-brand-primary text-white text-xs font-black uppercase tracking-wider rounded-soft shadow-md hover:bg-brand-primary/95 active:scale-95 transition-all"
             >
               Fill Personal Details
             </button>
           </div>
         )}
 
-        {/* Tab 1: Personal Details View */}
+        {/* Tab 1: Personal Info Tab */}
         {activeSubTab === 'personal' && (
           <form onSubmit={handlePersonalSubmit} className="space-y-6">
             <div>
@@ -253,9 +287,10 @@ export default function Profile() {
             <div className="pt-6 border-t border-slate-100">
               <button 
                 type="submit"
-                className="px-6 py-2.5 bg-brand-primary hover:bg-brand-primary/95 text-white text-xs font-black uppercase tracking-wider rounded-soft hover:scale-[1.01] active:scale-[0.99] transition-all shadow-sm"
+                disabled={mutation.isPending}
+                className="px-6 py-2.5 bg-brand-primary hover:bg-brand-primary/95 text-white text-xs font-black uppercase tracking-wider rounded-soft hover:scale-[1.01] active:scale-[0.99] transition-all shadow-sm disabled:opacity-50"
               >
-                Update Personal Info
+                {mutation.isPending ? 'Updating...' : 'Update Personal Info'}
               </button>
             </div>
           </form>
@@ -341,10 +376,10 @@ export default function Profile() {
             <div className="pt-6 border-t border-slate-100">
               <button 
                 type="submit"
-                disabled={academicHistory.length === 0}
+                disabled={academicHistory.length === 0 || mutation.isPending}
                 className="px-6 py-2.5 bg-brand-primary hover:bg-brand-primary/95 disabled:opacity-40 disabled:hover:scale-100 text-white text-xs font-black uppercase tracking-wider rounded-soft hover:scale-[1.01] active:scale-[0.99] transition-all shadow-sm"
               >
-                Save Academic Credentials
+                {mutation.isPending ? 'Saving...' : 'Save Academic Credentials'}
               </button>
             </div>
           </form>
@@ -390,7 +425,6 @@ export default function Profile() {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
-                        const dummyEvent = { preventDefault: () => {} };
                         if (skillsInput.trim() && !skills.includes(skillsInput.trim())) {
                           setSkills([...skills, skillsInput.trim()]);
                           setSkillsInput('');
@@ -455,9 +489,10 @@ export default function Profile() {
             <div className="pt-6 border-t border-slate-100">
               <button 
                 type="submit"
+                disabled={mutation.isPending}
                 className="px-6 py-2.5 bg-brand-primary text-white font-semibold rounded-soft hover:bg-brand-primary/95 transition-all shadow-sm"
               >
-                Save Professional Profile
+                {mutation.isPending ? 'Saving...' : 'Save Professional Profile'}
               </button>
             </div>
           </form>

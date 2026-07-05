@@ -97,23 +97,92 @@ export default function AuthProvider({ children }) {
   const [profileData, setProfileData] = useState({});
 
   useEffect(() => {
-    if (user?.email) {
-      const saved = localStorage.getItem(`skilledin-profile-${user.email}`);
-      setProfileData(saved ? JSON.parse(saved) : {});
-    } else {
-      setProfileData({});
-    }
+    const loadProfile = async () => {
+      if (user?.email) {
+        try {
+          const res = await axios.get(`http://localhost:5000/users/profile/${user.email}`);
+          if (res.data) {
+            const u = res.data;
+            const normalizedData = {
+              name: u.personalInfo?.name || u.name || user.displayName || '',
+              phone: u.personalInfo?.phone || '',
+              additionalEmail: u.personalInfo?.additionalEmail || '',
+              avatar: u.personalInfo?.avatar || u.image || user.photoURL || '',
+              academicHistory: Array.isArray(u.education) ? u.education : [],
+              currentJob: u.professionalInfo?.currentJob || '',
+              skills: Array.isArray(u.professionalInfo?.skills) ? u.professionalInfo.skills : [],
+              bio: u.professionalInfo?.bio || '',
+              profileCompletePercent: u.profileCompletePercent || 0
+            };
+            setProfileData(normalizedData);
+            localStorage.setItem(`skilledin-profile-${user.email}`, JSON.stringify(normalizedData));
+            return;
+          }
+        } catch (error) {
+          console.warn("Failed to fetch profile from server, using local fallback...", error.message);
+        }
+        
+        // Fallback to local storage if server fetch fails or doesn't exist
+        const saved = localStorage.getItem(`skilledin-profile-${user.email}`);
+        setProfileData(saved ? JSON.parse(saved) : {});
+      } else {
+        setProfileData({});
+      }
+    };
+    
+    loadProfile();
   }, [user]);
 
-  const updateProfileData = (newData) => {
+  const updateProfileData = async (newData) => {
     if (user?.email) {
-      const updated = { ...profileData, ...newData };
-      setProfileData(updated);
-      localStorage.setItem(`skilledin-profile-${user.email}`, JSON.stringify(updated));
+      // Build the structure to send to backend update-profile
+      const payload = {
+        email: user.email,
+        personalInfo: {
+          name: newData.name !== undefined ? newData.name : profileData.name || user.displayName || '',
+          phone: newData.phone !== undefined ? newData.phone : profileData.phone || '',
+          additionalEmail: newData.additionalEmail !== undefined ? newData.additionalEmail : profileData.additionalEmail || '',
+          avatar: newData.avatar !== undefined ? newData.avatar : profileData.avatar || user.photoURL || ''
+        },
+        education: newData.academicHistory !== undefined ? newData.academicHistory : profileData.academicHistory || [],
+        professionalInfo: {
+          currentJob: newData.currentJob !== undefined ? newData.currentJob : profileData.currentJob || '',
+          skills: newData.skills !== undefined ? newData.skills : profileData.skills || [],
+          bio: newData.bio !== undefined ? newData.bio : profileData.bio || ''
+        }
+      };
+
+      try {
+        const res = await axios.patch('http://localhost:5000/users/update-profile', payload);
+        if (res.data.success) {
+          const normalizedData = {
+            name: payload.personalInfo.name,
+            phone: payload.personalInfo.phone,
+            additionalEmail: payload.personalInfo.additionalEmail,
+            avatar: payload.personalInfo.avatar,
+            academicHistory: payload.education,
+            currentJob: payload.professionalInfo.currentJob,
+            skills: payload.professionalInfo.skills,
+            bio: payload.professionalInfo.bio,
+            profileCompletePercent: res.data.profileCompletePercent
+          };
+          setProfileData(normalizedData);
+          localStorage.setItem(`skilledin-profile-${user.email}`, JSON.stringify(normalizedData));
+        }
+      } catch (error) {
+        console.warn("Could not save profile to backend. Storing in local fallback...", error.message);
+        const updated = { ...profileData, ...newData };
+        setProfileData(updated);
+        localStorage.setItem(`skilledin-profile-${user.email}`, JSON.stringify(updated));
+      }
     }
   };
 
   const getProfileCompletion = () => {
+    if (profileData.profileCompletePercent !== undefined) {
+      return profileData.profileCompletePercent;
+    }
+    
     let score = 0;
     
     // Personal Details (60%)

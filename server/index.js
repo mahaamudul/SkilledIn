@@ -54,6 +54,18 @@ async function run() {
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
+
+    // Initialize atomic counters collection
+    try {
+      const countersCollection = db.collection("counters");
+      const countExist = await countersCollection.findOne({ _id: 'studentId' });
+      if (!countExist) {
+        await countersCollection.insertOne({ _id: 'studentId', seq: 0 });
+        console.log("Atomic studentId counter initialized at seq 0");
+      }
+    } catch (countersError) {
+      console.warn("Could not check or initialize atomic counters (MongoDB offline/sandbox):", countersError.message);
+    }
   } catch (error) {
     console.error("Failed to connect to MongoDB (remote Atlas blocked by network sandbox):", error.message);
   }
@@ -112,45 +124,250 @@ app.post('/jwt', async (req, res) => {
   res.send({ token });
 });
 
-// Database User Storage Endpoint (Resilient Upsert Logic with memory fallback)
+// Database User Storage Endpoint (Resilient atomic signup logic with memory fallback)
 app.post('/users', async (req, res) => {
   try {
     const user = req.body;
-    
+    if (!user.email) {
+      return res.status(400).send({ error: true, message: 'Email is required' });
+    }
+
     try {
-      const filter = { email: user.email };
-      const updateDoc = {
-        $setOnInsert: {
-          name: user.name,
-          email: user.email,
-          image: user.image || '',
-          role: 'student'
+      // Find user first (upsert style prevention)
+      const existingUser = await usersCollection.findOne({ email: user.email });
+      if (existingUser) {
+        return res.send(existingUser);
+      }
+
+      // If completely new, safely get next studentId sequence number atomically
+      const countersCollection = db.collection("counters");
+      const counterResult = await countersCollection.findOneAndUpdate(
+        { _id: 'studentId' },
+        { $inc: { seq: 1 } },
+        { returnDocument: 'after', returnOriginal: false, upsert: true }
+      );
+      
+      const nextSeqDoc = counterResult && (counterResult.value || counterResult);
+      const nextSeq = nextSeqDoc ? nextSeqDoc.seq : 1;
+      const formattedStudentId = `skilledin-${String(nextSeq).padStart(4, '0')}`;
+
+      // Insert new primary user document conforming to exact requested schema
+      const newUser = {
+        uid: user.uid || user.email,
+        email: user.email,
+        studentId: formattedStudentId,
+        role: user.role || 'student',
+        profileCompletePercent: 0,
+        personalInfo: {
+          name: user.name || '',
+          phone: user.phone || '',
+          additionalEmail: user.additionalEmail || '',
+          avatar: user.image || user.avatar || ''
+        },
+        education: [],
+        professionalInfo: {
+          currentJob: '',
+          skills: [],
+          bio: ''
         }
       };
-      const result = await usersCollection.updateOne(filter, updateDoc, { upsert: true });
-      return res.send(result);
+
+      await usersCollection.insertOne(newUser);
+      return res.status(201).send(newUser);
+
     } catch (dbError) {
-      console.warn("MongoDB connection offline. Storing in memory fallback...");
+      console.warn("MongoDB connection offline. Processing user signup via memory fallback...", dbError.message);
       
       let existingUser = usersMemory.find(u => u.email === user.email);
-      if (!existingUser) {
-        existingUser = {
-          name: user.name,
-          email: user.email,
-          image: user.image || '',
-          role: 'student'
-        };
-        usersMemory.push(existingUser);
+      if (existingUser) {
+        return res.send(existingUser);
       }
-      return res.send({ acknowledged: true, matchedCount: 1, modifiedCount: 0, upsertedId: existingUser.email });
+
+      // Increment sequence in memory
+      if (global.studentSeqCounter === undefined) {
+        global.studentSeqCounter = usersMemory.length;
+      }
+      global.studentSeqCounter += 1;
+      const formattedStudentId = `skilledin-${String(global.studentSeqCounter).padStart(4, '0')}`;
+
+      existingUser = {
+        uid: user.uid || user.email,
+        email: user.email,
+        studentId: formattedStudentId,
+        role: user.role || 'student',
+        profileCompletePercent: 0,
+        personalInfo: {
+          name: user.name || '',
+          phone: '',
+          additionalEmail: '',
+          avatar: user.image || user.avatar || ''
+        },
+        education: [],
+        professionalInfo: {
+          currentJob: '',
+          skills: [],
+          bio: ''
+        }
+      };
+      
+      usersMemory.push(existingUser);
+      return res.status(201).send(existingUser);
     }
   } catch (error) {
-    console.error("Failed to store user:", error);
+    console.error("Failed to store user signup:", error);
     res.status(500).send({ error: true, message: error.message });
   }
 });
 
-// GET user role endpoint (Resilient with memory fallback)
+// GET user current endpoint (Resilient with memory fallback)
+app.get('/users/current', async (req, res) => {
+  try {
+    const email = req.query.email;
+    if (!email) {
+      return res.status(400).send({ error: true, message: 'Email query parameter is required' });
+    }
+
+    try {
+      const userDoc = await usersCollection.findOne({ email });
+      if (userDoc) {
+        return res.send(userDoc);
+      }
+    } catch (dbError) {
+      console.warn("MongoDB connection offline. Fetching user info from memory fallback...", dbError.message);
+    }
+
+    const memUser = usersMemory.find(u => u.email === email);
+    if (memUser) {
+      return res.send(memUser);
+    }
+
+    res.status(404).send({ error: true, message: 'User info not found' });
+  } catch (error) {
+    console.error("Failed to retrieve current user:", error);
+    res.status(500).send({ error: true, message: error.message });
+  }
+});
+
+// GET user profile endpoint for synchronization (Resilient with memory fallback)
+app.get('/users/profile/:email', async (req, res) => {
+  try {
+    const email = req.params.email;
+    if (!email) {
+      return res.status(400).send({ error: true, message: 'Email param is required' });
+    }
+
+    try {
+      const userDoc = await usersCollection.findOne({ email });
+      if (userDoc) {
+        return res.send(userDoc);
+      }
+    } catch (dbError) {
+      console.warn("MongoDB connection offline. Fetching user profile from memory fallback...", dbError.message);
+    }
+
+    const memUser = usersMemory.find(u => u.email === email);
+    if (memUser) {
+      return res.send(memUser);
+    }
+
+    res.status(404).send({ error: true, message: 'User profile not found' });
+  } catch (error) {
+    console.error("Failed to retrieve user profile:", error);
+    res.status(500).send({ error: true, message: error.message });
+  }
+});
+
+// Atomic Profile Updates Endpoint (Resilient with dynamic completion recalculation & memory fallback)
+app.patch('/users/update-profile', async (req, res) => {
+  try {
+    const { email, personalInfo, education, professionalInfo } = req.body;
+    if (!email) {
+      return res.status(400).send({ error: true, message: 'Email identifier is required' });
+    }
+
+    let userDoc;
+    let isDbOffline = false;
+
+    try {
+      userDoc = await usersCollection.findOne({ email });
+    } catch (dbError) {
+      console.warn("MongoDB connection offline. Updating user profile in memory fallback...", dbError.message);
+      isDbOffline = true;
+      userDoc = usersMemory.find(u => u.email === email);
+    }
+
+    if (!userDoc) {
+      return res.status(404).send({ error: true, message: 'User not found' });
+    }
+
+    // Merge nested sub-documents safely
+    const mergedPersonalInfo = {
+      name: userDoc.personalInfo?.name || '',
+      phone: userDoc.personalInfo?.phone || '',
+      additionalEmail: userDoc.personalInfo?.additionalEmail || '',
+      avatar: userDoc.personalInfo?.avatar || '',
+      ...(personalInfo || {})
+    };
+
+    const mergedEducation = education !== undefined ? education : (userDoc.education || []);
+
+    const mergedProfessionalInfo = {
+      currentJob: userDoc.professionalInfo?.currentJob || '',
+      skills: userDoc.professionalInfo?.skills || [],
+      bio: userDoc.professionalInfo?.bio || '',
+      ...(professionalInfo || {})
+    };
+
+    // Calculate dynamic completion score based on rules
+    let score = 0;
+
+    // 1. Personal Details (60% weight total)
+    if (mergedPersonalInfo.name) score += 15;
+    if (mergedPersonalInfo.phone) score += 20;
+    if (mergedPersonalInfo.additionalEmail) score += 15;
+    if (mergedPersonalInfo.avatar) score += 10;
+
+    // 2. Academic History / Education (20% weight total)
+    if (Array.isArray(mergedEducation) && mergedEducation.length > 0) {
+      const hasValidEdu = mergedEducation.some(item => item.institution || item.degree);
+      if (hasValidEdu) {
+        score += 20;
+      }
+    }
+
+    // 3. Professional Info (20% weight total)
+    if (mergedProfessionalInfo.currentJob) score += 10;
+    if ((Array.isArray(mergedProfessionalInfo.skills) && mergedProfessionalInfo.skills.length > 0) || mergedProfessionalInfo.bio) {
+      score += 10;
+    }
+
+    if (!isDbOffline) {
+      const updateResult = await usersCollection.updateOne(
+        { email },
+        {
+          $set: {
+            personalInfo: mergedPersonalInfo,
+            education: mergedEducation,
+            professionalInfo: mergedProfessionalInfo,
+            profileCompletePercent: score
+          }
+        }
+      );
+      return res.send({ success: true, profileCompletePercent: score, updateResult });
+    } else {
+      // Memory update
+      userDoc.personalInfo = mergedPersonalInfo;
+      userDoc.education = mergedEducation;
+      userDoc.professionalInfo = mergedProfessionalInfo;
+      userDoc.profileCompletePercent = score;
+      return res.send({ success: true, profileCompletePercent: score, message: 'Updated profile in memory fallback' });
+    }
+  } catch (error) {
+    console.error("Failed to update user profile:", error);
+    res.status(500).send({ error: true, message: error.message });
+  }
+});
+
 app.get('/users/role/:email', async (req, res) => {
   try {
     const email = req.params.email;

@@ -1,5 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import {
   User,
   BookOpen,
@@ -14,10 +16,25 @@ import {
 import { AuthContext } from '../providers/AuthProvider';
 
 export default function DashboardLayout() {
-  const { user, role, setRole, profileData, profileCompletion } = useContext(AuthContext);
+  const { user, role, setRole } = useContext(AuthContext);
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const activeTab = searchParams.get('tab') || 'personal';
+
+  // Fetch current user details via TanStack Query
+  const { data: profile } = useQuery({
+    queryKey: ['user-profile', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return null;
+      const res = await axios.get(`http://localhost:5000/users/current?email=${user.email}`);
+      return res.data;
+    },
+    enabled: !!user?.email
+  });
+
+  const profileCompletion = profile?.profileCompletePercent ?? 0;
+  const avatarUrl = profile?.personalInfo?.avatar || user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80";
+  const displayName = profile?.personalInfo?.name || user?.displayName || "Active User";
 
   // Menus defined per role
   const menuConfigs = {
@@ -61,7 +78,7 @@ export default function DashboardLayout() {
           <div className="p-6 flex flex-col items-center border-b border-white/10 bg-black/10">
             <div className="relative">
               <img
-                src={profileData.avatar || user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"}
+                src={avatarUrl}
                 alt="User avatar placeholder"
                 className="w-16 h-16 rounded-full object-cover border border-white/20 shadow-sm"
               />
@@ -69,7 +86,7 @@ export default function DashboardLayout() {
             </div>
             
             <span className="text-xs font-bold text-white mt-3 truncate max-w-full">
-              {profileData.name || user?.displayName || "Active User"}
+              {displayName}
             </span>
             <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 mt-0.5">
               {role || 'student'}
@@ -78,8 +95,7 @@ export default function DashboardLayout() {
             {/* Profile Completion Progress Bar */}
             <div className="w-full mt-4 space-y-1.5">
               <div className="flex justify-between items-center text-[9px] font-bold text-slate-300">
-                <span>Profile Completion</span>
-                <span className="text-[#e2b74a]">{profileCompletion}%</span>
+                <span>{profileCompletion}% Completed</span>
               </div>
               <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                 <div 
@@ -93,10 +109,10 @@ export default function DashboardLayout() {
           {/* Navigation Links */}
           <nav className="p-4 space-y-4">
             
-            {/* Profile Management Submenu */}
+            {/* Profile Settings Submenu */}
             <div className="space-y-0.5">
               <span className="px-3 text-[9px] font-extrabold uppercase tracking-widest text-[#e2b74a]/70 block mb-1.5">
-                Profile Management
+                Profile Settings
               </span>
               
               <Link
@@ -108,7 +124,7 @@ export default function DashboardLayout() {
                 }`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                Personal Details
+                Personal Info
               </Link>
 
               <Link
@@ -120,7 +136,7 @@ export default function DashboardLayout() {
                 }`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                Academic History
+                Education
               </Link>
 
               <Link
@@ -132,7 +148,7 @@ export default function DashboardLayout() {
                 }`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                Professional & Skills
+                Professional/Skills
               </Link>
             </div>
 
