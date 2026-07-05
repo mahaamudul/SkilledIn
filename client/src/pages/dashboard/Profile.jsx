@@ -124,7 +124,12 @@ export default function Profile() {
   };
 
   const removeAcademicRow = (idxToRem) => {
-    setAcademicHistory(academicHistory.filter((_, idx) => idx !== idxToRem));
+    const updated = academicHistory.filter((_, idx) => idx !== idxToRem);
+    setAcademicHistory(updated);
+    mutation.mutate({
+      email: user.email,
+      education: updated
+    });
   };
 
   const handleAcademicRowChange = (idx, field, val) => {
@@ -376,7 +381,7 @@ export default function Profile() {
             <div className="pt-6 border-t border-slate-100">
               <button 
                 type="submit"
-                disabled={academicHistory.length === 0 || mutation.isPending}
+                disabled={mutation.isPending}
                 className="px-6 py-2.5 bg-brand-primary hover:bg-brand-primary/95 disabled:opacity-40 disabled:hover:scale-100 text-white text-xs font-black uppercase tracking-wider rounded-soft hover:scale-[1.01] active:scale-[0.99] transition-all shadow-sm"
               >
                 {mutation.isPending ? 'Saving...' : 'Save Academic Credentials'}
