@@ -17,7 +17,9 @@ import {
   GraduationCap, 
   Sparkles,
   Briefcase,
-  FileText
+  FileText,
+  Edit3,
+  Check
 } from 'lucide-react';
 import { AuthContext } from '../../providers/AuthProvider';
 import toast from 'react-hot-toast';
@@ -42,6 +44,7 @@ export default function Profile() {
   const [skillsInput, setSkillsInput] = useState('');
   const [skills, setSkills] = useState([]);
   const [bio, setBio] = useState('');
+  const [isEditingProfessional, setIsEditingProfessional] = useState(false);
 
   // Fetch current user details via TanStack Query
   const { data: profile } = useQuery({
@@ -81,6 +84,13 @@ export default function Profile() {
       setCurrentJob(profile.professionalInfo?.currentJob || '');
       setSkills(Array.isArray(profile.professionalInfo?.skills) ? profile.professionalInfo.skills : []);
       setBio(profile.professionalInfo?.bio || '');
+
+      const hasProfessional = !!(
+        profile.professionalInfo?.currentJob || 
+        profile.professionalInfo?.bio || 
+        (profile.professionalInfo?.skills && profile.professionalInfo.skills.length > 0)
+      );
+      setIsEditingProfessional(!hasProfessional);
     }
   }, [profile, user]);
 
@@ -114,6 +124,10 @@ export default function Profile() {
         currentJob,
         skills,
         bio
+      }
+    }, {
+      onSuccess: () => {
+        setIsEditingProfessional(false);
       }
     });
   };
@@ -393,30 +407,58 @@ export default function Profile() {
         {/* Tab 3: Professional & Skills View */}
         {activeSubTab === 'skills' && (
           <form onSubmit={handleProfessionalSubmit} className="space-y-6">
-            <div>
-              <h3 className="text-base font-bold text-brand-primary border-b border-slate-100 pb-2 flex items-center gap-2">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+              <h3 className="text-base font-bold text-brand-primary flex items-center gap-2">
                 <Briefcase className="w-4 h-4 text-brand-teal" />
                 Professional & Skills details
               </h3>
+              
+              {!isEditingProfessional ? (
+                <button
+                  type="button"
+                  onClick={() => setIsEditingProfessional(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-650 border border-slate-200 text-xs font-bold rounded-soft transition-all"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-brand-teal" />
+                  Edit Details
+                </button>
+              ) : (
+                (profile?.professionalInfo?.currentJob || profile?.professionalInfo?.bio || profile?.professionalInfo?.skills?.length > 0) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentJob(profile.professionalInfo?.currentJob || '');
+                      setSkills(profile.professionalInfo?.skills || []);
+                      setBio(profile.professionalInfo?.bio || '');
+                      setIsEditingProfessional(false);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold rounded-soft transition-all"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Cancel Edit
+                  </button>
+                )
+              )}
             </div>
 
             <div className="space-y-5">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-505 mb-1.5">
                   Current Job/Occupation
                 </label>
                 <input 
                   type="text" 
+                  disabled={!isEditingProfessional}
                   placeholder="Software Engineer at Google"
                   value={currentJob}
                   onChange={(e) => setCurrentJob(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-soft text-sm focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal transition-all shadow-sm text-slate-700"
+                  className="w-full px-4 py-2.5 bg-white disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed border border-slate-200 rounded-soft text-sm focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal transition-all shadow-sm text-slate-700 font-semibold"
                 />
               </div>
 
               {/* Skills Tag block */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-505 mb-1.5">
                   Skills & Certifications
                 </label>
                 
@@ -424,6 +466,7 @@ export default function Profile() {
                 <div className="flex gap-2 mb-3">
                   <input 
                     type="text" 
+                    disabled={!isEditingProfessional}
                     placeholder="React, MongoDB, Node.js"
                     value={skillsInput}
                     onChange={(e) => setSkillsInput(e.target.value)}
@@ -436,10 +479,11 @@ export default function Profile() {
                         }
                       }
                     }}
-                    className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-soft text-sm focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal transition-all shadow-sm text-slate-700"
+                    className="flex-1 px-4 py-2.5 bg-white disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed border border-slate-200 rounded-soft text-sm focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal transition-all shadow-sm text-slate-700 font-semibold"
                   />
                   <button
                     type="button"
+                    disabled={!isEditingProfessional}
                     onClick={(e) => {
                       e.preventDefault();
                       if (skillsInput.trim() && !skills.includes(skillsInput.trim())) {
@@ -447,7 +491,7 @@ export default function Profile() {
                         setSkillsInput('');
                       }
                     }}
-                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-250 text-slate-705 text-xs font-bold rounded-soft transition-all"
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-250 text-slate-705 text-xs font-bold rounded-soft transition-all"
                   >
                     Add
                   </button>
@@ -464,13 +508,15 @@ export default function Profile() {
                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-brand-teal/10 text-brand-teal border border-brand-teal/20 shadow-sm"
                       >
                         {skill}
-                        <button 
-                          type="button" 
-                          onClick={() => handleRemoveSkill(skill)}
-                          className="hover:text-red-500 transition-colors"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
+                        {isEditingProfessional && (
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveSkill(skill)}
+                            className="hover:text-red-500 transition-colors"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
                       </span>
                     ))}
                   </div>
@@ -478,27 +524,39 @@ export default function Profile() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-505 mb-1.5">
                   Professional Bio
                 </label>
                 <textarea
                   rows={4}
+                  disabled={!isEditingProfessional}
                   placeholder="Describe your credentials, skills, projects, and educational achievements..."
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-soft text-sm focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal transition-all shadow-sm text-slate-705 font-medium leading-relaxed"
+                  className="w-full px-4 py-2.5 bg-white disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed border border-slate-200 rounded-soft text-sm focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal transition-all shadow-sm text-slate-705 font-medium leading-relaxed"
                 />
               </div>
             </div>
 
-            <div className="pt-6 border-t border-slate-100">
-              <button 
-                type="submit"
-                disabled={mutation.isPending}
-                className="px-6 py-2.5 bg-brand-primary text-white font-semibold rounded-soft hover:bg-brand-primary/95 transition-all shadow-sm"
-              >
-                {mutation.isPending ? 'Saving...' : 'Save Professional Profile'}
-              </button>
+            <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
+              {isEditingProfessional ? (
+                <button 
+                  type="submit"
+                  disabled={mutation.isPending}
+                  className="px-6 py-2.5 bg-brand-primary hover:bg-brand-primary/95 text-white text-xs font-black uppercase tracking-wider rounded-soft hover:scale-[1.01] active:scale-[0.99] transition-all shadow-sm disabled:opacity-50"
+                >
+                  {mutation.isPending ? 'Saving...' : 'Save Professional Profile'}
+                </button>
+              ) : (
+                <button 
+                  type="button"
+                  disabled
+                  className="px-6 py-2.5 bg-slate-100 border border-slate-200 text-slate-400 text-xs font-black uppercase tracking-wider rounded-soft transition-all flex items-center gap-1.5 cursor-not-allowed"
+                >
+                  <Check className="w-4 h-4 text-emerald-500" />
+                  Profile Saved
+                </button>
+              )}
             </div>
           </form>
         )}
