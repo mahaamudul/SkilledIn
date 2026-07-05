@@ -94,6 +94,50 @@ export default function AuthProvider({ children }) {
     }
   }, [role]);
 
+  const [profileData, setProfileData] = useState({});
+
+  useEffect(() => {
+    if (user?.email) {
+      const saved = localStorage.getItem(`skilledin-profile-${user.email}`);
+      setProfileData(saved ? JSON.parse(saved) : {});
+    } else {
+      setProfileData({});
+    }
+  }, [user]);
+
+  const updateProfileData = (newData) => {
+    if (user?.email) {
+      const updated = { ...profileData, ...newData };
+      setProfileData(updated);
+      localStorage.setItem(`skilledin-profile-${user.email}`, JSON.stringify(updated));
+    }
+  };
+
+  const getProfileCompletion = () => {
+    let score = 0;
+    
+    // Personal Details (60%)
+    if (profileData.name || user?.displayName) score += 15;
+    if (profileData.phone) score += 20;
+    if (profileData.additionalEmail) score += 15;
+    if (profileData.avatar || user?.photoURL) score += 10;
+    
+    // Academic History (20%)
+    if (Array.isArray(profileData.academicHistory) && profileData.academicHistory.length > 0) {
+      const hasAcademic = profileData.academicHistory.some(item => item.institution || item.degree);
+      if (hasAcademic) score += 20;
+    }
+    
+    // Professional Profiles (20%)
+    if (profileData.currentJob || (Array.isArray(profileData.skills) && profileData.skills.length > 0) || profileData.bio) {
+      score += 20;
+    }
+    
+    return score;
+  };
+
+  const profileCompletion = getProfileCompletion();
+
   const authInfo = {
     user,
     role,
@@ -103,7 +147,10 @@ export default function AuthProvider({ children }) {
     signIn,
     signInWithGoogle,
     logOut,
-    updateUserProfile
+    updateUserProfile,
+    profileData,
+    updateProfileData,
+    profileCompletion
   };
 
   return (
