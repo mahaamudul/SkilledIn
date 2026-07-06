@@ -33,7 +33,7 @@ export default function DashboardLayout() {
   });
 
   const profileCompletion = profile?.profileCompletePercent ?? 0;
-  const avatarUrl = profile?.personalInfo?.avatar || user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80";
+  const avatarUrl = profile?.personalInfo?.avatar || user?.photoURL || "";
   const displayName = profile?.personalInfo?.name || user?.displayName || "Active User";
 
   // Menus defined per role
@@ -77,11 +77,17 @@ export default function DashboardLayout() {
           {/* Consolidated Profile Metrics Section */}
           <div className="p-6 flex flex-col items-center border-b border-white/10 bg-black/10">
             <div className="relative">
-              <img
-                src={avatarUrl}
-                alt="User avatar placeholder"
-                className="w-16 h-16 rounded-full object-cover border border-white/20 shadow-sm"
-              />
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="User avatar"
+                  className="w-16 h-16 rounded-full object-cover border border-white/20 shadow-sm"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-slate-300">
+                  <User className="w-8 h-8" />
+                </div>
+              )}
               <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-[#1c3b2f] rounded-full" />
             </div>
             
@@ -212,11 +218,17 @@ export default function DashboardLayout() {
               </select>
             </div>
             <div className="w-px h-8 bg-slate-200" />
-            <img
-              src={(user && user.photoURL) || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"}
-              alt="User avatar placeholder"
-              className="w-8 h-8 rounded-full object-cover border border-brand-teal/20 shadow-sm"
-            />
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="User avatar"
+                className="w-8 h-8 rounded-full object-cover border border-brand-teal/20 shadow-sm"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-slate-100 border border-brand-teal/20 flex items-center justify-center text-slate-500">
+                <User className="w-4 h-4" />
+              </div>
+            )}
           </div>
         </header>
 

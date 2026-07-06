@@ -48,7 +48,7 @@ export default function Teach() {
     if (!user) return;
     submitApplication.mutate({
       name: user.displayName || 'Active Student',
-      image: user.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+      image: user.photoURL || '',
       email: user.email,
       experience,
       title: title || 'Educator Specialist',

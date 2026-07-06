@@ -9,6 +9,7 @@ import {
   ArrowRight,
   GraduationCap,
   Users,
+  User,
   BookOpen,
   Award,
   CheckCircle2,
@@ -1058,11 +1059,17 @@ export default function Home() {
                     </div>
 
                     <div className="flex items-center gap-3.5 pt-4 border-t border-slate-100 mt-auto">
-                      <img
-                        src={item.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"}
-                        alt={item.studentName}
-                        className="w-10 h-10 rounded-full object-cover border border-brand-teal/20 shadow-sm"
-                      />
+                      {item.avatar ? (
+                        <img
+                          src={item.avatar}
+                          alt={item.studentName}
+                          className="w-10 h-10 rounded-full object-cover border border-brand-teal/20 shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-slate-100 border border-brand-teal/20 flex items-center justify-center text-slate-500">
+                          <User className="w-5 h-5" />
+                        </div>
+                      )}
                       <div>
                         <h4 className="font-bold text-brand-primary text-sm leading-none line-clamp-1">{item.studentName}</h4>
                         <span className="text-xs text-brand-teal font-semibold mt-1 block">Verified Student</span>

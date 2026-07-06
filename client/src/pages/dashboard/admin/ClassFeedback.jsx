@@ -60,11 +60,17 @@ export default function ClassFeedback() {
               <div key={f._id || index} className={`pt-4 ${index === 0 ? 'pt-0' : ''} space-y-3`}>
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-3">
-                    <img
-                      src={f.student_image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"}
-                      alt={f.student_name}
-                      className="w-10 h-10 rounded-full border border-slate-200 object-cover"
-                    />
+                    {f.student_image ? (
+                      <img
+                        src={f.student_image}
+                        alt={f.student_name}
+                        className="w-10 h-10 rounded-full border border-slate-200 object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500">
+                        <User className="w-5 h-5" />
+                      </div>
+                    )}
                     <div>
                       <h4 className="text-sm font-bold text-brand-primary">{f.student_name}</h4>
                       <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide">Reviewer</p>

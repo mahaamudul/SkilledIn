@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, UserPlus, Shield, ChevronLeft, ChevronRight, Inbox, Loader2 } from 'lucide-react';
+import { Search, User, UserPlus, Shield, ChevronLeft, ChevronRight, Inbox, Loader2 } from 'lucide-react';
 import useAxiosSecure from '../../../hooks/useAxiosSecure';
 import toast from 'react-hot-toast';
 
@@ -95,11 +95,17 @@ export default function UsersManagement() {
                   {users.map((item) => (
                     <tr key={item._id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4 flex items-center gap-3">
-                        <img
-                          src={item.image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"}
-                          alt={item.name}
-                          className="w-8 h-8 rounded-full border border-slate-200 object-cover"
-                        />
+                        {item.personalInfo?.avatar || item.image ? (
+                          <img
+                            src={item.personalInfo?.avatar || item.image}
+                            alt={item.name}
+                            className="w-8 h-8 rounded-full border border-slate-200 object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500">
+                            <User className="w-4 h-4" />
+                          </div>
+                        )}
                         <span className="font-bold text-brand-primary text-sm">{item.name}</span>
                       </td>
                       <td className="px-6 py-4">

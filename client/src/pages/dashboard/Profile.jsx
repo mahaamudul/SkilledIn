@@ -19,7 +19,8 @@ import {
   Briefcase,
   FileText,
   Edit3,
-  Check
+  Check,
+  Loader2
 } from 'lucide-react';
 import { AuthContext } from '../../providers/AuthProvider';
 import toast from 'react-hot-toast';
@@ -45,6 +46,7 @@ export default function Profile() {
   const [skills, setSkills] = useState([]);
   const [bio, setBio] = useState('');
   const [isEditingProfessional, setIsEditingProfessional] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   // Fetch current user details via TanStack Query
   const { data: profile } = useQuery({
@@ -93,6 +95,55 @@ export default function Profile() {
       setIsEditingProfessional(!hasProfessional);
     }
   }, [profile, user]);
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const apiKey = import.meta.env.VITE_IMGBB_API_KEY;
+    if (!apiKey) {
+      toast.error("ImageBB API key is missing. Please check VITE_IMGBB_API_KEY in .env.local");
+      return;
+    }
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data?.success) {
+        const uploadedUrl = data.data.url;
+        setAvatar(uploadedUrl);
+        
+        mutation.mutate({
+          email: user.email,
+          personalInfo: {
+            name,
+            phone,
+            additionalEmail,
+            avatar: uploadedUrl
+          }
+        }, {
+          onSuccess: () => {
+            toast.success('Avatar uploaded successfully!');
+            queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+          }
+        });
+      } else {
+        toast.error(data?.error?.message || 'Failed to upload image to ImageBB');
+      }
+    } catch (err) {
+      console.error('ImageBB upload error:', err);
+      toast.error('Failed to upload image. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // Submit handlers
   const handlePersonalSubmit = (e) => {
@@ -224,6 +275,52 @@ export default function Profile() {
               </h3>
             </div>
 
+            {/* Top-Middle Profile Photo Frame */}
+            <div className="flex flex-col items-center justify-center mb-6">
+              <div className="relative">
+                <label 
+                  htmlFor="avatar-upload" 
+                  className="relative group block cursor-pointer w-24 h-24 rounded-full border-2 border-dashed border-slate-350 flex items-center justify-center bg-slate-50 hover:bg-slate-100 hover:border-brand-teal transition-all shadow-sm overflow-hidden"
+                >
+                  {uploading ? (
+                    <div className="flex flex-col items-center justify-center gap-1">
+                      <Loader2 className="w-6 h-6 text-brand-teal animate-spin" />
+                      <span className="text-[9px] font-bold text-brand-teal">Uploading...</span>
+                    </div>
+                  ) : avatar ? (
+                    <div className="relative w-full h-full">
+                      <img 
+                        src={avatar} 
+                        alt="Profile avatar" 
+                        className="w-full h-full rounded-full object-cover" 
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80";
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                        <Plus className="w-6 h-6" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-slate-400 group-hover:text-brand-teal transition-colors">
+                      <Plus className="w-5 h-5 group-hover:scale-110 transition-transform mb-1" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Upload</span>
+                    </div>
+                  )}
+                </label>
+                <input 
+                  type="file" 
+                  id="avatar-upload" 
+                  accept="image/*" 
+                  onChange={handleAvatarChange}
+                  className="hidden" 
+                  disabled={uploading}
+                />
+              </div>
+              <p className="text-xs text-slate-400 mt-2 font-medium">Click frame to upload avatar</p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
@@ -265,41 +362,6 @@ export default function Profile() {
                   onChange={(e) => setAdditionalEmail(e.target.value)}
                   className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-soft text-sm focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal transition-all shadow-sm text-slate-700"
                 />
-              </div>
-            </div>
-
-            {/* Placeholder Photo Frame with + Upload trigger */}
-            <div className="border-t border-slate-100 pt-6 space-y-4">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Avatar Photo Frame <span className="text-red-500">*</span>
-              </label>
-              <div className="flex flex-col sm:flex-row items-center gap-5">
-                <div className="relative group cursor-pointer w-20 h-20 rounded-full border-2 border-dashed border-slate-350 flex items-center justify-center bg-slate-50 hover:bg-slate-100 hover:border-brand-teal transition-all shadow-sm">
-                  {avatar ? (
-                    <img 
-                      src={avatar} 
-                      alt="Profile preview" 
-                      className="w-full h-full rounded-full object-cover" 
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80";
-                      }}
-                    />
-                  ) : (
-                    <Plus className="w-5 h-5 text-slate-400 group-hover:text-brand-teal group-hover:scale-110 transition-transform" />
-                  )}
-                </div>
-                <div className="flex-1 w-full space-y-1 text-center sm:text-left">
-                  <h4 className="text-sm font-bold text-brand-primary">Configure User Avatar Link</h4>
-                  <p className="text-xs text-slate-400 pb-1">Paste a web link to set your custom avatar photo above.</p>
-                  <input 
-                    type="text" 
-                    placeholder="https://unsplash.com/photos/yourphoto (optional)"
-                    value={avatar}
-                    onChange={(e) => setAvatar(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-slate-200 rounded-soft text-xs focus:outline-none focus:ring-1 focus:ring-brand-teal/20 focus:border-brand-teal transition-all"
-                  />
-                </div>
               </div>
             </div>
 

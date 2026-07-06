@@ -1,7 +1,9 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { GraduationCap, Menu, X, LayoutDashboard, LogOut, ChevronDown, LogIn } from 'lucide-react';
+import { GraduationCap, Menu, X, LayoutDashboard, LogOut, ChevronDown, LogIn, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import { AuthContext } from '../../providers/AuthProvider';
 
 export default function Navbar() {
@@ -10,6 +12,18 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, logOut } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  const { data: profile } = useQuery({
+    queryKey: ['user-profile', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return null;
+      const res = await axios.get(`http://localhost:5000/users/current?email=${user.email}`);
+      return res.data;
+    },
+    enabled: !!user?.email
+  });
+
+  const avatarUrl = profile?.personalInfo?.avatar || "";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,8 +48,6 @@ export default function Navbar() {
       console.error("Logout failed:", error);
     }
   };
-
-  const defaultAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80";
 
   return (
     <nav className={`sticky top-0 z-50 w-full transition-colors duration-300 ${
@@ -81,11 +93,17 @@ export default function Navbar() {
                     onClick={() => setDropdownOpen(!dropdownOpen)}
                     className="flex items-center gap-2 focus:outline-none group p-1 rounded-full hover:bg-slate-50 transition-all"
                   >
-                    <img
-                      src={user.photoURL || defaultAvatar}
-                      alt={user.displayName || "User"}
-                      className="w-8 h-8 rounded-full object-cover border border-brand-teal/20 shadow-sm group-hover:border-brand-teal group-hover:scale-105 transition-all"
-                    />
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={user.displayName || "User"}
+                        className="w-8 h-8 rounded-full object-cover border border-brand-teal/20 shadow-sm group-hover:border-brand-teal group-hover:scale-105 transition-all"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-slate-100 border border-brand-teal/20 flex items-center justify-center text-slate-500 group-hover:border-brand-teal group-hover:scale-105 transition-all">
+                        <User className="w-4 h-4" />
+                      </div>
+                    )}
                     <ChevronDown className="w-3.5 h-3.5 text-slate-500 group-hover:text-brand-primary transition-transform duration-200" />
                   </button>
 
@@ -180,11 +198,17 @@ export default function Navbar() {
             {user ? (
               <div className="space-y-2.5">
                 <div className="flex items-center gap-2.5 px-3 py-1.5 bg-slate-50 rounded-soft border border-slate-100">
-                  <img
-                    src={user.photoURL || defaultAvatar}
-                    alt={user.displayName || "User"}
-                    className="w-9 h-9 rounded-full object-cover border border-brand-teal/20"
-                  />
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={user.displayName}
+                      className="w-9 h-9 rounded-full object-cover border border-brand-teal/20"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-slate-100 border border-brand-teal/20 flex items-center justify-center text-slate-500">
+                      <User className="w-4.5 h-4.5" />
+                    </div>
+                  )}
                   <div>
                     <span className="block text-xs font-bold text-slate-400">Authenticated</span>
                     <span className="block text-sm font-bold text-slate-700 leading-none mt-0.5 truncate">

@@ -16,8 +16,7 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const defaultPhoto = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80";
-    const imageToSave = defaultPhoto;
+    const imageToSave = "";
 
     try {
       // 1. Firebase createUser
@@ -53,7 +52,7 @@ export default function Register() {
       await axios.post('http://localhost:5000/users', {
         name: user.displayName || "Google User",
         email: user.email,
-        image: user.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
+        image: user.photoURL || ""
       });
 
       toast.success("Google Registration Successful! Welcome.");
